@@ -37,6 +37,37 @@ export const STRATEGY_LABELS: Record<OptimizeStrategy, string> = {
   custom_score: 'カスタムスコア',
 };
 
+export type Gender = 'male' | 'female';
+
+export interface AgeGroup {
+  id: string;
+  label: string;
+  minAge: number;
+  maxAge: number;
+}
+
+export const AGE_GROUPS: AgeGroup[] = [
+  { id: '12-14', label: '12-14歳', minAge: 12, maxAge: 14 },
+  { id: '15-17', label: '15-17歳', minAge: 15, maxAge: 17 },
+  { id: '18-29', label: '18-29歳', minAge: 18, maxAge: 29 },
+  { id: '30-49', label: '30-49歳', minAge: 30, maxAge: 49 },
+  { id: '50-64', label: '50-64歳', minAge: 50, maxAge: 64 },
+  { id: '65-74', label: '65-74歳', minAge: 65, maxAge: 74 },
+];
+
+export const GENDER_LABELS: Record<Gender, string> = {
+  male: '男性',
+  female: '女性',
+};
+
+export type MealType = 'daily' | 'per_meal' | 'school_lunch';
+
+export const MEAL_TYPE_LABELS: Record<MealType, string> = {
+  daily: '1日分',
+  per_meal: '一食分',
+  school_lunch: '給食基準（中学生）',
+};
+
 export interface FoodAmount {
   food_name: string;
   amount_g: number;

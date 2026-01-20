@@ -36,15 +36,9 @@ h3 {
 }
 
 .layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
-}
-
-@media (max-width: 900px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
 }
 
 .panel {
@@ -364,12 +358,36 @@ h3 {
   margin-top: 0.5rem;
 }
 
+.contribution-bar-wrapper {
+  position: relative;
+}
+
 .contribution-bar {
   display: flex;
   height: 20px;
   background: #e9ecef;
   border-radius: 10px;
   overflow: hidden;
+}
+
+.hundred-percent-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #333;
+  pointer-events: none;
+}
+
+.hundred-percent-marker .marker-label {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #333;
+  white-space: nowrap;
+  font-weight: bold;
 }
 
 .contribution-segment {
@@ -725,4 +743,156 @@ h3 {
   outline: none;
   border-color: #ffc107;
   box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.25);
+}
+
+/* Profile Selector */
+.profile-panel {
+  margin-top: 1rem;
+}
+
+.profile-description {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.profile-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-field > label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.age-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.age-input-group input {
+  width: 80px;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.age-input-group input:focus {
+  outline: none;
+  border-color: #0f4c75;
+  box-shadow: 0 0 0 2px rgba(15, 76, 117, 0.2);
+}
+
+.age-unit {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.age-group-label {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.age-options,
+.gender-options,
+.meal-type-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.meal-type-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.meal-type-option:hover {
+  background: #e9ecef;
+}
+
+.meal-type-option.selected {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+}
+
+.meal-type-option input[type="radio"] {
+  margin: 0;
+}
+
+.meal-type-option span {
+  font-weight: 500;
+}
+
+.age-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.age-option:hover {
+  background: #e9ecef;
+}
+
+.age-option.selected {
+  background: #d4edda;
+  border: 1px solid #28a745;
+}
+
+.age-option input[type="radio"] {
+  margin: 0;
+}
+
+.age-option span {
+  font-weight: 500;
+}
+
+.gender-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gender-option:hover {
+  background: #e9ecef;
+}
+
+.gender-option.selected {
+  background: #cce5ff;
+  border: 1px solid #0f4c75;
+}
+
+.gender-option input[type="radio"] {
+  margin: 0;
+}
+
+.gender-option span {
+  font-weight: 500;
 }

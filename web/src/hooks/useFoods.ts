@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { FoodItem, FixedFood, OptimizeResult, OptimizeStrategy, ScoringParams } from '../types';
+import type { FoodItem, FixedFood, OptimizeResult, OptimizeStrategy, ScoringParams, Gender, MealType } from '../types';
 import { DEFAULT_SCORING_PARAMS } from '../types';
 import { fetchFoods, runOptimize } from '../api';
 
@@ -9,6 +9,9 @@ export function useFoods() {
   const [fixedFoods, setFixedFoods] = useState<Map<string, number>>(new Map());
   const [strategy, setStrategy] = useState<OptimizeStrategy>('balanced');
   const [scoringParams, setScoringParams] = useState<ScoringParams>(DEFAULT_SCORING_PARAMS);
+  const [age, setAge] = useState<number>(23);
+  const [gender, setGender] = useState<Gender>('male');
+  const [mealType, setMealType] = useState<MealType>('daily');
   const [result, setResult] = useState<OptimizeResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [optimizing, setOptimizing] = useState(false);
@@ -80,13 +83,19 @@ export function useFoods() {
         fixedFoods: fixedFoodsArray,
         strategy,
         scoringParams,
+        age,
+        gender,
+        mealType,
       });
       const res = await runOptimize(
         Array.from(selectedFoods),
         fixedFoodsArray,
         1500,
         strategy,
-        scoringParams
+        scoringParams,
+        age,
+        gender,
+        mealType
       );
       console.log('Optimization result:', res);
       setResult(res);
@@ -95,7 +104,7 @@ export function useFoods() {
     } finally {
       setOptimizing(false);
     }
-  }, [selectedFoods, fixedFoods, strategy, scoringParams]);
+  }, [selectedFoods, fixedFoods, strategy, scoringParams, age, gender, mealType]);
 
   return {
     foods,
@@ -103,6 +112,9 @@ export function useFoods() {
     fixedFoods,
     strategy,
     scoringParams,
+    age,
+    gender,
+    mealType,
     result,
     loading,
     optimizing,
@@ -111,6 +123,9 @@ export function useFoods() {
     setFixedAmount,
     setStrategy,
     setScoringParams,
+    setAge,
+    setGender,
+    setMealType,
     selectAll,
     clearAll,
     optimize,

@@ -6,12 +6,14 @@ from src.optimize import (
     load_food_data,
     optimize_diet,
     calculate_totals,
-    DAILY_REQUIREMENTS,
     DAILY_UPPER_LIMITS,
     NUTRIENT_NAMES,
     _optimize_strict,
     optimize_calorie_focused,
     optimize_with_score,
+    get_requirements_for_age_gender,
+    get_requirements_for_meal_type,
+    AGE_GROUPS,
 )
 from .models import (
     FoodItem,
@@ -21,6 +23,7 @@ from .models import (
     FoodAmount,
     OptimizeStrategy,
     ScoringParams,
+    MealType,
 )
 
 
@@ -69,6 +72,9 @@ class FoodService:
         fixed_foods: dict[str, float] = None,
         strategy: OptimizeStrategy = OptimizeStrategy.BALANCED,
         scoring_params: ScoringParams = None,
+        age: int = 23,
+        gender: str = "male",
+        meal_type: MealType = MealType.DAILY,
     ) -> OptimizeResult:
         """Run optimization on selected foods
 
@@ -76,11 +82,17 @@ class FoodService:
             fixed_foods: {食品名: 固定量(g)} の辞書
             strategy: 最適化戦略
             scoring_params: カスタムスコアのパラメータ
+            age: 年齢
+            gender: 性別 (male/female)
+            meal_type: 食事タイプ (daily/per_meal/school_lunch)
         """
         if fixed_foods is None:
             fixed_foods = {}
         if scoring_params is None:
             scoring_params = ScoringParams()
+
+        # 食事タイプに基づいて栄養基準を取得
+        requirements = get_requirements_for_meal_type(meal_type.value, age, gender)
 
         if self.foods.empty:
             return OptimizeResult(
@@ -106,7 +118,7 @@ class FoodService:
             # 厳密モード: 全栄養素を満たす
             amounts = _optimize_strict(
                 selected_df,
-                DAILY_REQUIREMENTS,
+                requirements,
                 DAILY_UPPER_LIMITS,
                 max_food_amount_g,
                 fixed_foods,
@@ -123,7 +135,7 @@ class FoodService:
             # カロリー重視モード
             amounts = optimize_calorie_focused(
                 selected_df,
-                DAILY_REQUIREMENTS,
+                requirements,
                 DAILY_UPPER_LIMITS,
                 max_food_amount_g,
                 fixed_foods,
@@ -142,7 +154,7 @@ class FoodService:
             }
             amounts = optimize_with_score(
                 selected_df,
-                DAILY_REQUIREMENTS,
+                requirements,
                 DAILY_UPPER_LIMITS,
                 max_food_amount_g,
                 fixed_foods,
@@ -154,7 +166,7 @@ class FoodService:
             # バランスモード: 厳密を試し、失敗したら緩和
             strict_result = _optimize_strict(
                 selected_df,
-                DAILY_REQUIREMENTS,
+                requirements,
                 DAILY_UPPER_LIMITS,
                 max_food_amount_g,
                 fixed_foods,
@@ -162,7 +174,7 @@ class FoodService:
             is_strict = bool(strict_result)
             amounts = optimize_diet(
                 selected_df,
-                requirements=DAILY_REQUIREMENTS,
+                requirements=requirements,
                 upper_limits=DAILY_UPPER_LIMITS,
                 max_food_amount_g=max_food_amount_g,
                 fixed_foods=fixed_foods,
@@ -186,15 +198,15 @@ class FoodService:
             ratio = amount_g / 100
             food_contributions[food_name] = {}
             total_contrib = 0
-            for key in DAILY_REQUIREMENTS.keys():
+            for key in requirements.keys():
                 if key in food_row:
                     val = food_row[key]
                     if pd.notna(val):
                         food_contributions[food_name][key] = val * ratio
                         # 貢献度を正規化して合計
-                        required = DAILY_REQUIREMENTS[key]
-                        if required > 0:
-                            total_contrib += min((val * ratio) / required, 1.0)
+                        req_val = requirements[key]
+                        if req_val > 0:
+                            total_contrib += min((val * ratio) / req_val, 1.0)
             food_total_contributions[food_name] = total_contrib
 
         # 全食品の合計貢献度
@@ -225,7 +237,7 @@ class FoodService:
 
         nutrients = []
         achieved_count = 0
-        for key, required in DAILY_REQUIREMENTS.items():
+        for key, required in requirements.items():
             actual = totals.get(key, 0)
             ratio = (actual / required * 100) if required > 0 else 0
             achieved = ratio >= 100
@@ -264,7 +276,7 @@ class FoodService:
         if is_strict:
             message = f"[{strategy_name}] 最適化成功（全栄養素を満たしています）"
         else:
-            message = f"[{strategy_name}] {achieved_count}/{len(DAILY_REQUIREMENTS)}栄養素を満たしています"
+            message = f"[{strategy_name}] {achieved_count}/{len(requirements)}栄養素を満たしています"
 
         return OptimizeResult(
             success=True,

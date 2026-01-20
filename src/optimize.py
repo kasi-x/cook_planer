@@ -12,64 +12,239 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent / "data"
 MERGED_DIR = DATA_DIR / "merged"
 
-# 12-14歳の食事摂取基準（2025年版）
-# Source: https://japanese-food.net/top-page/meals-intake-standard-table-2025/dietary-intake-standard12-14-2025
+# 食事摂取基準（2025年版）
+# Source: https://japanese-food.net/top-page/meals-intake-standard-table-2025/
 # 身体活動レベル「普通」を使用
 
-DAILY_REQUIREMENTS_MALE = {
-    # 基本
-    "energy_kcal": 2600,
-    "protein_g": 60,
-    "fiber_g": 17,
-    # ミネラル
-    "potassium_mg": 2400,
-    "calcium_mg": 1000,
-    "magnesium_mg": 290,
-    "iron_mg": 9.0,
-    "zinc_mg": 8.5,
-    # ビタミン
-    "vitamin_a_ug": 800,
-    "vitamin_d_ug": 9.0,
-    "vitamin_e_mg": 6.5,
-    "vitamin_k_ug": 140,
-    "vitamin_b1_mg": 1.1,
-    "vitamin_b2_mg": 1.6,
-    "niacin_mg": 15,
-    "vitamin_b6_mg": 1.4,
-    "vitamin_b12_ug": 4.0,
-    "folate_ug": 230,
-    "pantothenic_mg": 7,
-    "vitamin_c_mg": 90,
+# 年齢グループ別・性別の栄養基準
+AGE_GROUPS = {
+    "12-14": {"label": "12-14歳", "min_age": 12, "max_age": 14},
+    "15-17": {"label": "15-17歳", "min_age": 15, "max_age": 17},
+    "18-29": {"label": "18-29歳", "min_age": 18, "max_age": 29},
+    "30-49": {"label": "30-49歳", "min_age": 30, "max_age": 49},
+    "50-64": {"label": "50-64歳", "min_age": 50, "max_age": 64},
+    "65-74": {"label": "65-74歳", "min_age": 65, "max_age": 74},
 }
 
-DAILY_REQUIREMENTS_FEMALE = {
-    # 基本
-    "energy_kcal": 2400,
-    "protein_g": 55,
-    "fiber_g": 16,
-    # ミネラル
-    "potassium_mg": 2200,
-    "calcium_mg": 800,
-    "magnesium_mg": 290,
-    "iron_mg": 8.0,
-    "zinc_mg": 8.5,
-    # ビタミン
-    "vitamin_a_ug": 700,
-    "vitamin_d_ug": 9.0,
-    "vitamin_e_mg": 6.0,
-    "vitamin_k_ug": 150,
-    "vitamin_b1_mg": 1.0,
-    "vitamin_b2_mg": 1.4,
-    "niacin_mg": 14,
-    "vitamin_b6_mg": 1.3,
-    "vitamin_b12_ug": 4.0,
-    "folate_ug": 230,
-    "pantothenic_mg": 6,
-    "vitamin_c_mg": 90,
+# 12-14歳男性
+REQUIREMENTS_12_14_MALE = {
+    "energy_kcal": 2600, "protein_g": 60, "fiber_g": 17,
+    "potassium_mg": 2400, "calcium_mg": 1000, "magnesium_mg": 290,
+    "iron_mg": 9.0, "zinc_mg": 8.5,
+    "vitamin_a_ug": 800, "vitamin_d_ug": 9.0, "vitamin_e_mg": 6.5,
+    "vitamin_k_ug": 140, "vitamin_b1_mg": 1.1, "vitamin_b2_mg": 1.6,
+    "niacin_mg": 15, "vitamin_b6_mg": 1.4, "vitamin_b12_ug": 4.0,
+    "folate_ug": 230, "pantothenic_mg": 7, "vitamin_c_mg": 90,
 }
 
-# デフォルトは男性
-DAILY_REQUIREMENTS = DAILY_REQUIREMENTS_MALE
+# 12-14歳女性
+REQUIREMENTS_12_14_FEMALE = {
+    "energy_kcal": 2400, "protein_g": 55, "fiber_g": 16,
+    "potassium_mg": 2200, "calcium_mg": 800, "magnesium_mg": 290,
+    "iron_mg": 8.0, "zinc_mg": 8.5,
+    "vitamin_a_ug": 700, "vitamin_d_ug": 9.0, "vitamin_e_mg": 6.0,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 1.0, "vitamin_b2_mg": 1.4,
+    "niacin_mg": 14, "vitamin_b6_mg": 1.3, "vitamin_b12_ug": 4.0,
+    "folate_ug": 230, "pantothenic_mg": 6, "vitamin_c_mg": 90,
+}
+
+# 15-17歳男性
+REQUIREMENTS_15_17_MALE = {
+    "energy_kcal": 2800, "protein_g": 65, "fiber_g": 19,
+    "potassium_mg": 2700, "calcium_mg": 800, "magnesium_mg": 360,
+    "iron_mg": 10.0, "zinc_mg": 10.0,
+    "vitamin_a_ug": 900, "vitamin_d_ug": 9.0, "vitamin_e_mg": 7.0,
+    "vitamin_k_ug": 160, "vitamin_b1_mg": 1.4, "vitamin_b2_mg": 1.7,
+    "niacin_mg": 17, "vitamin_b6_mg": 1.5, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 7, "vitamin_c_mg": 100,
+}
+
+# 15-17歳女性
+REQUIREMENTS_15_17_FEMALE = {
+    "energy_kcal": 2300, "protein_g": 55, "fiber_g": 17,
+    "potassium_mg": 2000, "calcium_mg": 650, "magnesium_mg": 310,
+    "iron_mg": 10.5, "zinc_mg": 8.0,
+    "vitamin_a_ug": 650, "vitamin_d_ug": 8.5, "vitamin_e_mg": 5.5,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 1.1, "vitamin_b2_mg": 1.4,
+    "niacin_mg": 13, "vitamin_b6_mg": 1.3, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 6, "vitamin_c_mg": 100,
+}
+
+# 18-29歳男性
+REQUIREMENTS_18_29_MALE = {
+    "energy_kcal": 2650, "protein_g": 65, "fiber_g": 21,
+    "potassium_mg": 2500, "calcium_mg": 800, "magnesium_mg": 340,
+    "iron_mg": 7.5, "zinc_mg": 11.0,
+    "vitamin_a_ug": 850, "vitamin_d_ug": 8.5, "vitamin_e_mg": 6.0,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 1.4, "vitamin_b2_mg": 1.6,
+    "niacin_mg": 15, "vitamin_b6_mg": 1.4, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 5, "vitamin_c_mg": 100,
+}
+
+# 18-29歳女性
+REQUIREMENTS_18_29_FEMALE = {
+    "energy_kcal": 2000, "protein_g": 50, "fiber_g": 18,
+    "potassium_mg": 2000, "calcium_mg": 650, "magnesium_mg": 270,
+    "iron_mg": 10.5, "zinc_mg": 8.0,
+    "vitamin_a_ug": 650, "vitamin_d_ug": 8.5, "vitamin_e_mg": 5.0,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 1.1, "vitamin_b2_mg": 1.2,
+    "niacin_mg": 11, "vitamin_b6_mg": 1.1, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 5, "vitamin_c_mg": 100,
+}
+
+# 30-49歳男性
+REQUIREMENTS_30_49_MALE = {
+    "energy_kcal": 2700, "protein_g": 65, "fiber_g": 21,
+    "potassium_mg": 2500, "calcium_mg": 750, "magnesium_mg": 370,
+    "iron_mg": 7.5, "zinc_mg": 11.0,
+    "vitamin_a_ug": 900, "vitamin_d_ug": 8.5, "vitamin_e_mg": 6.0,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 1.4, "vitamin_b2_mg": 1.6,
+    "niacin_mg": 15, "vitamin_b6_mg": 1.4, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 5, "vitamin_c_mg": 100,
+}
+
+# 30-49歳女性
+REQUIREMENTS_30_49_FEMALE = {
+    "energy_kcal": 2050, "protein_g": 50, "fiber_g": 18,
+    "potassium_mg": 2000, "calcium_mg": 650, "magnesium_mg": 290,
+    "iron_mg": 10.5, "zinc_mg": 8.0,
+    "vitamin_a_ug": 700, "vitamin_d_ug": 8.5, "vitamin_e_mg": 5.5,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 1.1, "vitamin_b2_mg": 1.2,
+    "niacin_mg": 12, "vitamin_b6_mg": 1.1, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 5, "vitamin_c_mg": 100,
+}
+
+# 50-64歳男性
+REQUIREMENTS_50_64_MALE = {
+    "energy_kcal": 2600, "protein_g": 65, "fiber_g": 21,
+    "potassium_mg": 2500, "calcium_mg": 750, "magnesium_mg": 370,
+    "iron_mg": 7.5, "zinc_mg": 11.0,
+    "vitamin_a_ug": 900, "vitamin_d_ug": 8.5, "vitamin_e_mg": 7.0,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 1.3, "vitamin_b2_mg": 1.5,
+    "niacin_mg": 14, "vitamin_b6_mg": 1.4, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 5, "vitamin_c_mg": 100,
+}
+
+# 50-64歳女性
+REQUIREMENTS_50_64_FEMALE = {
+    "energy_kcal": 1950, "protein_g": 50, "fiber_g": 18,
+    "potassium_mg": 2000, "calcium_mg": 650, "magnesium_mg": 290,
+    "iron_mg": 6.5, "zinc_mg": 8.0,
+    "vitamin_a_ug": 700, "vitamin_d_ug": 8.5, "vitamin_e_mg": 6.0,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 1.0, "vitamin_b2_mg": 1.1,
+    "niacin_mg": 11, "vitamin_b6_mg": 1.1, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 5, "vitamin_c_mg": 100,
+}
+
+# 65-74歳男性
+REQUIREMENTS_65_74_MALE = {
+    "energy_kcal": 2400, "protein_g": 60, "fiber_g": 20,
+    "potassium_mg": 2500, "calcium_mg": 750, "magnesium_mg": 350,
+    "iron_mg": 7.5, "zinc_mg": 10.0,
+    "vitamin_a_ug": 850, "vitamin_d_ug": 8.5, "vitamin_e_mg": 7.0,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 1.2, "vitamin_b2_mg": 1.4,
+    "niacin_mg": 13, "vitamin_b6_mg": 1.4, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 5, "vitamin_c_mg": 100,
+}
+
+# 65-74歳女性
+REQUIREMENTS_65_74_FEMALE = {
+    "energy_kcal": 1850, "protein_g": 50, "fiber_g": 17,
+    "potassium_mg": 2000, "calcium_mg": 650, "magnesium_mg": 280,
+    "iron_mg": 6.0, "zinc_mg": 8.0,
+    "vitamin_a_ug": 700, "vitamin_d_ug": 8.5, "vitamin_e_mg": 6.5,
+    "vitamin_k_ug": 150, "vitamin_b1_mg": 0.9, "vitamin_b2_mg": 1.1,
+    "niacin_mg": 10, "vitamin_b6_mg": 1.1, "vitamin_b12_ug": 4.0,
+    "folate_ug": 240, "pantothenic_mg": 5, "vitamin_c_mg": 100,
+}
+
+# 給食基準（中学生12-14歳、一食分）
+# Source: https://www.city.asahi.lg.jp/site/asahikyusyoku/31477.html
+# たんぱく質・脂質は範囲の最大値を使用
+SCHOOL_LUNCH_REQUIREMENTS = {
+    "energy_kcal": 830,
+    "protein_g": 830 * 0.20 / 4,  # 20%をカロリーから計算（4kcal/g）= 41.5g
+    "fiber_g": 7,
+    "calcium_mg": 450,
+    "magnesium_mg": 120,
+    "iron_mg": 4.5,
+    "zinc_mg": 3,
+    "vitamin_a_ug": 300,
+    "vitamin_b1_mg": 0.5,
+    "vitamin_b2_mg": 0.6,
+    "vitamin_c_mg": 35,
+}
+
+
+# 年齢・性別から基準を取得する関数
+def get_requirements_for_age_gender(age: int, gender: str = "male") -> dict:
+    """年齢と性別に基づいて適切な栄養基準を返す"""
+    requirements_map = {
+        ("12-14", "male"): REQUIREMENTS_12_14_MALE,
+        ("12-14", "female"): REQUIREMENTS_12_14_FEMALE,
+        ("15-17", "male"): REQUIREMENTS_15_17_MALE,
+        ("15-17", "female"): REQUIREMENTS_15_17_FEMALE,
+        ("18-29", "male"): REQUIREMENTS_18_29_MALE,
+        ("18-29", "female"): REQUIREMENTS_18_29_FEMALE,
+        ("30-49", "male"): REQUIREMENTS_30_49_MALE,
+        ("30-49", "female"): REQUIREMENTS_30_49_FEMALE,
+        ("50-64", "male"): REQUIREMENTS_50_64_MALE,
+        ("50-64", "female"): REQUIREMENTS_50_64_FEMALE,
+        ("65-74", "male"): REQUIREMENTS_65_74_MALE,
+        ("65-74", "female"): REQUIREMENTS_65_74_FEMALE,
+    }
+
+    # 年齢から年齢グループを特定
+    age_group = None
+    for group_id, group_info in AGE_GROUPS.items():
+        if group_info["min_age"] <= age <= group_info["max_age"]:
+            age_group = group_id
+            break
+
+    # 見つからない場合は最も近いグループを使用
+    if age_group is None:
+        if age < 12:
+            age_group = "12-14"
+        elif age > 74:
+            age_group = "65-74"
+        else:
+            age_group = "18-29"  # デフォルト
+
+    gender_key = "female" if gender.lower() in ["female", "f", "女", "女性"] else "male"
+    return requirements_map.get((age_group, gender_key), REQUIREMENTS_18_29_MALE)
+
+
+def get_requirements_for_meal_type(
+    meal_type: str,
+    age: int = 23,
+    gender: str = "male"
+) -> dict:
+    """食事タイプに基づいて栄養基準を返す
+
+    Args:
+        meal_type: "daily" (1日分), "per_meal" (一食分), "school_lunch" (給食基準)
+        age: 年齢（daily, per_mealの場合に使用）
+        gender: 性別（daily, per_mealの場合に使用）
+    """
+    if meal_type == "school_lunch":
+        return SCHOOL_LUNCH_REQUIREMENTS
+
+    daily_req = get_requirements_for_age_gender(age, gender)
+
+    if meal_type == "per_meal":
+        # 一食分 = 1日の1/3
+        return {k: v / 3 for k, v in daily_req.items()}
+
+    # daily (デフォルト)
+    return daily_req
+
+
+# 後方互換性のためのエイリアス
+DAILY_REQUIREMENTS_MALE = REQUIREMENTS_18_29_MALE
+DAILY_REQUIREMENTS_FEMALE = REQUIREMENTS_18_29_FEMALE
+
+# デフォルトは18-29歳男性
+DAILY_REQUIREMENTS = REQUIREMENTS_18_29_MALE
 
 # 栄養素の上限（過剰摂取防止）
 DAILY_UPPER_LIMITS = {

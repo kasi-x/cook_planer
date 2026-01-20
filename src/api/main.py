@@ -50,4 +50,7 @@ def optimize(request: OptimizeRequest) -> OptimizeResult:
         fixed_foods=fixed_foods,
         strategy=request.strategy,
         scoring_params=request.scoring_params,
+        age=request.age,
+        gender=request.gender,
+        meal_type=request.meal_type,
     )

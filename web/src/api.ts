@@ -1,4 +1,4 @@
-import type { FoodItem, FixedFood, OptimizeResult, OptimizeStrategy, ScoringParams } from './types';
+import type { FoodItem, FixedFood, OptimizeResult, OptimizeStrategy, ScoringParams, Gender, MealType } from './types';
 import { DEFAULT_SCORING_PARAMS } from './types';
 
 const API_BASE = '/api';
@@ -16,7 +16,10 @@ export async function runOptimize(
   fixedFoods: FixedFood[] = [],
   maxFoodAmountG: number = 1500,
   strategy: OptimizeStrategy = 'balanced',
-  scoringParams: ScoringParams = DEFAULT_SCORING_PARAMS
+  scoringParams: ScoringParams = DEFAULT_SCORING_PARAMS,
+  age: number = 23,
+  gender: Gender = 'male',
+  mealType: MealType = 'daily'
 ): Promise<OptimizeResult> {
   const response = await fetch(`${API_BASE}/optimize`, {
     method: 'POST',
@@ -27,6 +30,9 @@ export async function runOptimize(
       fixed_foods: fixedFoods,
       strategy: strategy,
       scoring_params: scoringParams,
+      age: age,
+      gender: gender,
+      meal_type: mealType,
     }),
   });
   if (!response.ok) {

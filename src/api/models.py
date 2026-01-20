@@ -36,6 +36,13 @@ class FixedFood(BaseModel):
     amount_g: float = Field(gt=0)
 
 
+class MealType(str, Enum):
+    """Meal type for nutrition calculation"""
+    DAILY = "daily"  # 1日分
+    PER_MEAL = "per_meal"  # 一食分
+    SCHOOL_LUNCH = "school_lunch"  # 給食基準
+
+
 class OptimizeRequest(BaseModel):
     """Request for optimization"""
     selected_foods: list[str] = Field(default_factory=list)
@@ -43,6 +50,9 @@ class OptimizeRequest(BaseModel):
     fixed_foods: list[FixedFood] = Field(default_factory=list)
     strategy: OptimizeStrategy = Field(default=OptimizeStrategy.BALANCED)
     scoring_params: ScoringParams = Field(default_factory=ScoringParams)
+    age: int = Field(default=23, ge=1, le=120, description="年齢")
+    gender: str = Field(default="male", description="性別 (male/female)")
+    meal_type: MealType = Field(default=MealType.DAILY, description="食事タイプ")
 
 
 class FoodAmount(BaseModel):

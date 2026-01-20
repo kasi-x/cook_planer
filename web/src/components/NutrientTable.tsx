@@ -31,34 +31,54 @@ function ContributionBar({
 }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
+  // バーの最大値は100%または実際の達成率のうち大きい方
+  const maxRatio = Math.max(100, ratio);
+  // 100%ラインの位置（%）
+  const hundredPercentPosition = (100 / maxRatio) * 100;
+
   return (
     <div className="contribution-container">
-      <div className="contribution-bar">
-        {contributions.map((c, i) => (
-          <div
-            key={c.food_name}
-            className={`contribution-segment ${hoveredIndex === i ? 'hovered' : ''}`}
-            style={{
-              width: `${Math.min(c.percentage, 100 - contributions.slice(0, i).reduce((sum, x) => sum + Math.min(x.percentage, 100), 0))}%`,
-              backgroundColor: getColor(i),
-            }}
-            onMouseEnter={() => setHoveredIndex(i)}
-            onMouseLeave={() => setHoveredIndex(null)}
-          >
-            {hoveredIndex === i && (
-              <div className="contribution-tooltip">
-                <strong>{c.food_name}</strong> ({c.amount}g)
-                <br />
-                {c.contribution} {unit} ({c.percentage}%)
+      <div className="contribution-bar-wrapper">
+        <div className="contribution-bar">
+          {contributions.map((c, i) => {
+            // 各セグメントの幅をmaxRatioに対する割合で計算
+            const segmentWidth = (c.percentage / maxRatio) * 100;
+            return (
+              <div
+                key={c.food_name}
+                className={`contribution-segment ${hoveredIndex === i ? 'hovered' : ''}`}
+                style={{
+                  width: `${segmentWidth}%`,
+                  backgroundColor: getColor(i),
+                }}
+                onMouseEnter={() => setHoveredIndex(i)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              >
+                {hoveredIndex === i && (
+                  <div className="contribution-tooltip">
+                    <strong>{c.food_name}</strong> ({c.amount}g)
+                    <br />
+                    {c.contribution} {unit} ({c.percentage}%)
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
-        {ratio < 100 && (
+            );
+          })}
+          {ratio < 100 && (
+            <div
+              className="contribution-segment empty"
+              style={{ width: `${((100 - ratio) / maxRatio) * 100}%` }}
+            />
+          )}
+        </div>
+        {/* 100%ラインのマーカー */}
+        {ratio > 100 && (
           <div
-            className="contribution-segment empty"
-            style={{ width: `${100 - Math.min(ratio, 100)}%` }}
-          />
+            className="hundred-percent-marker"
+            style={{ left: `${hundredPercentPosition}%` }}
+          >
+            <span className="marker-label">100%</span>
+          </div>
         )}
       </div>
       <div className="contribution-legend">

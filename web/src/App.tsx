@@ -1,4 +1,5 @@
 import { FoodSelector } from './components/FoodSelector';
+import { ProfileSelector } from './components/ProfileSelector';
 import { ResultPanel } from './components/ResultPanel';
 import { StrategySelector } from './components/StrategySelector';
 import { useFoods } from './hooks/useFoods';
@@ -10,6 +11,9 @@ export default function App() {
     fixedFoods,
     strategy,
     scoringParams,
+    age,
+    gender,
+    mealType,
     result,
     loading,
     optimizing,
@@ -18,6 +22,9 @@ export default function App() {
     setFixedAmount,
     setStrategy,
     setScoringParams,
+    setAge,
+    setGender,
+    setMealType,
     selectAll,
     clearAll,
     optimize,
@@ -48,6 +55,14 @@ export default function App() {
             onSetFixed={setFixedAmount}
             onSelectAll={selectAll}
             onClearAll={clearAll}
+          />
+          <ProfileSelector
+            age={age}
+            gender={gender}
+            mealType={mealType}
+            onAgeChange={setAge}
+            onGenderChange={setGender}
+            onMealTypeChange={setMealType}
           />
           <StrategySelector
             strategy={strategy}
