@@ -1,0 +1,32 @@
+[workspace]
+authors = ["kashi-x <kashimiya.exe@gmail.com>"]
+channels = ["conda-forge"]
+name = "cook_planer"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+scrape-keimei = "python src/scrapers/keimei_scraper.py"
+scrape-tokyo = "python src/scrapers/tokyo_market_scraper.py"
+scrape-mext = "python src/scrapers/mext_nutrition_scraper.py"
+scrape-all = { depends-on = ["scrape-keimei", "scrape-tokyo", "scrape-mext"] }
+merge = "python src/merge_data.py"
+optimize = "python src/optimize.py"
+report = "python src/generate_report.py"
+all = { depends-on = ["scrape-all", "merge", "report"] }
+api = "uvicorn src.api.main:app --reload --port 8000"
+
+[dependencies]
+python = ">=3.11"
+requests = "*"
+beautifulsoup4 = "*"
+pdfplumber = "*"
+pandas = "*"
+scipy = "*"
+lxml = "*"
+openpyxl = "*"
+
+[pypi-dependencies]
+playwright = "*"
+fastapi = "*"
+uvicorn = "*"
