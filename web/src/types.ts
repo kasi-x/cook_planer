@@ -5,6 +5,13 @@ export interface FoodItem {
   protein_g: number;
 }
 
+export interface FoodContribution {
+  food_name: string;
+  amount: number;
+  contribution: number;
+  percentage: number;
+}
+
 export interface NutrientStatus {
   name: string;
   actual: number;
@@ -12,6 +19,7 @@ export interface NutrientStatus {
   unit: string;
   ratio: number;
   achieved: boolean;
+  contributions: FoodContribution[];
 }
 
 export interface OptimizeResult {

@@ -1,49 +1,116 @@
-import type { NutrientStatus } from '../types';
+import { useState } from 'react';
+import type { NutrientStatus, FoodContribution } from '../types';
 
 interface Props {
   nutrients: NutrientStatus[];
+}
+
+const COLORS = [
+  '#3498db', // blue
+  '#e74c3c', // red
+  '#2ecc71', // green
+  '#f39c12', // orange
+  '#9b59b6', // purple
+  '#1abc9c', // teal
+  '#e67e22', // dark orange
+  '#34495e', // dark gray
+];
+
+function getColor(index: number): string {
+  return COLORS[index % COLORS.length];
+}
+
+function ContributionBar({
+  contributions,
+  ratio,
+}: {
+  contributions: FoodContribution[];
+  ratio: number;
+}) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  return (
+    <div className="contribution-container">
+      <div className="contribution-bar">
+        {contributions.map((c, i) => (
+          <div
+            key={c.food_name}
+            className={`contribution-segment ${hoveredIndex === i ? 'hovered' : ''}`}
+            style={{
+              width: `${Math.min(c.percentage, 100 - contributions.slice(0, i).reduce((sum, x) => sum + Math.min(x.percentage, 100), 0))}%`,
+              backgroundColor: getColor(i),
+            }}
+            onMouseEnter={() => setHoveredIndex(i)}
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
+            {hoveredIndex === i && (
+              <div className="contribution-tooltip">
+                <strong>{c.food_name}</strong>
+                <br />
+                {c.contribution} ({c.percentage}%)
+              </div>
+            )}
+          </div>
+        ))}
+        {ratio < 100 && (
+          <div
+            className="contribution-segment empty"
+            style={{ width: `${100 - Math.min(ratio, 100)}%` }}
+          />
+        )}
+      </div>
+      <div className="contribution-legend">
+        {contributions.map((c, i) => (
+          <span
+            key={c.food_name}
+            className={`legend-item ${hoveredIndex === i ? 'hovered' : ''}`}
+            onMouseEnter={() => setHoveredIndex(i)}
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
+            <span
+              className="legend-color"
+              style={{ backgroundColor: getColor(i) }}
+            />
+            <span className="legend-text">
+              {c.food_name}: {c.percentage}%
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function NutrientTable({ nutrients }: Props) {
   return (
     <div className="nutrient-section">
       <h3>栄養素達成状況</h3>
-      <table className="nutrient-table">
-        <thead>
-          <tr>
-            <th>栄養素</th>
-            <th>摂取量</th>
-            <th>目標</th>
-            <th>達成率</th>
-            <th>状態</th>
-          </tr>
-        </thead>
-        <tbody>
-          {nutrients.map((n) => (
-            <tr key={n.name}>
-              <td>{n.name}</td>
-              <td>
-                {n.actual} {n.unit}
-              </td>
-              <td>
-                {n.required} {n.unit}
-              </td>
-              <td>
-                <div className="progress-bar">
-                  <div
-                    className={`progress-fill ${n.achieved ? 'complete' : ''}`}
-                    style={{ width: `${Math.min(n.ratio, 100)}%` }}
-                  />
-                </div>
-                <span>{n.ratio.toFixed(0)}%</span>
-              </td>
-              <td className={n.achieved ? 'status-ok' : 'status-ng'}>
+      <div className="nutrient-cards">
+        {nutrients.map((n) => (
+          <div
+            key={n.name}
+            className={`nutrient-card ${n.achieved ? 'achieved' : 'not-achieved'}`}
+          >
+            <div className="nutrient-header">
+              <span className="nutrient-name">{n.name}</span>
+              <span className={`nutrient-status ${n.achieved ? 'ok' : 'ng'}`}>
                 {n.achieved ? 'OK' : 'NG'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </span>
+            </div>
+            <div className="nutrient-values">
+              <span className="actual">
+                {n.actual} {n.unit}
+              </span>
+              <span className="separator">/</span>
+              <span className="required">
+                {n.required} {n.unit}
+              </span>
+              <span className="ratio">({n.ratio.toFixed(0)}%)</span>
+            </div>
+            <ContributionBar contributions={n.contributions} ratio={n.ratio} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

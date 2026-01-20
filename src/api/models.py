@@ -17,6 +17,14 @@ class OptimizeRequest(BaseModel):
     max_food_amount_g: float = Field(default=1500, gt=0)
 
 
+class FoodContribution(BaseModel):
+    """Contribution of a food to a nutrient"""
+    food_name: str
+    amount: float
+    contribution: float
+    percentage: float
+
+
 class NutrientStatus(BaseModel):
     """Status of a single nutrient"""
     name: str
@@ -25,6 +33,7 @@ class NutrientStatus(BaseModel):
     unit: str
     ratio: float
     achieved: bool
+    contributions: list[FoodContribution] = Field(default_factory=list)
 
 
 class OptimizeResult(BaseModel):

@@ -269,3 +269,195 @@ h3 {
   text-align: center;
   padding: 2rem;
 }
+
+/* Nutrient Cards */
+.nutrient-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.nutrient-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid #ccc;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nutrient-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.nutrient-card.achieved {
+  border-left-color: #28a745;
+  background: linear-gradient(135deg, #fff 0%, #f0fff4 100%);
+}
+
+.nutrient-card.not-achieved {
+  border-left-color: #dc3545;
+  background: linear-gradient(135deg, #fff 0%, #fff5f5 100%);
+}
+
+.nutrient-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.nutrient-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #16213e;
+}
+
+.nutrient-status {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.nutrient-status.ok {
+  background: #d4edda;
+  color: #155724;
+}
+
+.nutrient-status.ng {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.nutrient-values {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.nutrient-values .actual {
+  font-weight: 600;
+  color: #0f4c75;
+}
+
+.nutrient-values .separator {
+  color: #aaa;
+}
+
+.nutrient-values .required {
+  color: #666;
+}
+
+.nutrient-values .ratio {
+  margin-left: auto;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Contribution Bar */
+.contribution-container {
+  margin-top: 0.5rem;
+}
+
+.contribution-bar {
+  display: flex;
+  height: 20px;
+  background: #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.contribution-segment {
+  position: relative;
+  height: 100%;
+  transition: opacity 0.2s, transform 0.2s;
+  cursor: pointer;
+  min-width: 2px;
+}
+
+.contribution-segment:hover,
+.contribution-segment.hovered {
+  opacity: 0.85;
+  transform: scaleY(1.1);
+  z-index: 10;
+}
+
+.contribution-segment.empty {
+  background: #e9ecef;
+  cursor: default;
+}
+
+.contribution-segment.empty:hover {
+  transform: none;
+  opacity: 1;
+}
+
+.contribution-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+  margin-bottom: 5px;
+}
+
+.contribution-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.85);
+}
+
+/* Contribution Legend */
+.contribution-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #666;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.legend-item:hover,
+.legend-item.hovered {
+  background: #f0f0f0;
+}
+
+.legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}

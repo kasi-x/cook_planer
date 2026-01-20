@@ -11,7 +11,7 @@ from src.optimize import (
     NUTRIENT_NAMES,
     _optimize_strict,
 )
-from .models import FoodItem, OptimizeResult, NutrientStatus
+from .models import FoodItem, OptimizeResult, NutrientStatus, FoodContribution
 
 
 def get_unit(nutrient_key: str) -> str:
@@ -98,6 +98,18 @@ class FoodService:
         totals = calculate_totals(self.foods, amounts)
         total_cost = totals.get("total_cost", 0)
 
+        # 各食品の各栄養素への貢献度を計算
+        food_contributions = {}
+        for food_name, amount_g in amounts.items():
+            food_row = self.foods[self.foods["food_name"] == food_name].iloc[0]
+            ratio = amount_g / 100
+            food_contributions[food_name] = {}
+            for key in DAILY_REQUIREMENTS.keys():
+                if key in food_row:
+                    val = food_row[key]
+                    if pd.notna(val):
+                        food_contributions[food_name][key] = val * ratio
+
         nutrients = []
         achieved_count = 0
         for key, required in DAILY_REQUIREMENTS.items():
@@ -106,6 +118,24 @@ class FoodService:
             achieved = ratio >= 100
             if achieved:
                 achieved_count += 1
+
+            # 各食品の貢献度を計算
+            contributions = []
+            for food_name, amount_g in amounts.items():
+                contrib_val = food_contributions.get(food_name, {}).get(key, 0)
+                if contrib_val > 0:
+                    contrib_pct = (contrib_val / required * 100) if required > 0 else 0
+                    contributions.append(
+                        FoodContribution(
+                            food_name=food_name,
+                            amount=round(amount_g, 0),
+                            contribution=round(contrib_val, 2),
+                            percentage=round(contrib_pct, 1),
+                        )
+                    )
+            # 貢献度の高い順にソート
+            contributions.sort(key=lambda x: x.percentage, reverse=True)
+
             nutrients.append(
                 NutrientStatus(
                     name=NUTRIENT_NAMES.get(key, key),
@@ -114,6 +144,7 @@ class FoodService:
                     unit=get_unit(key),
                     ratio=round(ratio, 1),
                     achieved=achieved,
+                    contributions=contributions,
                 )
             )
 
