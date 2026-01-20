@@ -43,7 +43,11 @@ def get_foods() -> list[FoodItem]:
 @app.post("/api/optimize", response_model=OptimizeResult)
 def optimize(request: OptimizeRequest) -> OptimizeResult:
     """Run optimization on selected foods"""
+    fixed_foods = {f.food_name: f.amount_g for f in request.fixed_foods}
     return food_service.optimize(
         selected_foods=request.selected_foods,
         max_food_amount_g=request.max_food_amount_g,
+        fixed_foods=fixed_foods,
+        strategy=request.strategy,
+        scoring_params=request.scoring_params,
     )

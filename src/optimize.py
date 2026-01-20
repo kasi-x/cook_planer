@@ -116,27 +116,33 @@ def optimize_diet(
     requirements: dict = None,
     upper_limits: dict = None,
     max_food_amount_g: float = 1500,
+    fixed_foods: dict[str, float] = None,
 ) -> dict:
     """最小コストで栄養要件を満たす食材量を計算
 
     まず全制約を満たす最適化を試み、失敗した場合は
     制約を緩和してベストエフォートの結果を返す。
+
+    Args:
+        fixed_foods: {食品名: 固定量(g)} の辞書。指定された食品は必ずその量を使用。
     """
     if requirements is None:
         requirements = DAILY_REQUIREMENTS
     if upper_limits is None:
         upper_limits = DAILY_UPPER_LIMITS
+    if fixed_foods is None:
+        fixed_foods = {}
 
     if foods.empty:
         return {}
 
     # まず全制約での最適化を試行
-    result = _optimize_strict(foods, requirements, upper_limits, max_food_amount_g)
+    result = _optimize_strict(foods, requirements, upper_limits, max_food_amount_g, fixed_foods)
     if result:
         return result
 
     # 失敗した場合は緩和版を試行
-    return _optimize_relaxed(foods, requirements, upper_limits, max_food_amount_g)
+    return _optimize_relaxed(foods, requirements, upper_limits, max_food_amount_g, fixed_foods)
 
 
 def _optimize_strict(
@@ -144,8 +150,12 @@ def _optimize_strict(
     requirements: dict,
     upper_limits: dict,
     max_food_amount_g: float,
+    fixed_foods: dict[str, float] = None,
 ) -> dict:
     """全栄養素制約を満たす最適化（厳密版）"""
+    if fixed_foods is None:
+        fixed_foods = {}
+
     n_foods = len(foods)
     food_names = foods['food_name'].tolist()
     c = foods['price_per_100g'].values
@@ -167,7 +177,15 @@ def _optimize_strict(
 
     A_ub = np.array(A_ub) if A_ub else None
     b_ub = np.array(b_ub) if b_ub else None
-    bounds = [(0, max_food_amount_g / 100) for _ in range(n_foods)]
+
+    # 固定食品は上下限を同じ値に設定
+    bounds = []
+    for name in food_names:
+        if name in fixed_foods:
+            fixed_val = fixed_foods[name] / 100
+            bounds.append((fixed_val, fixed_val))
+        else:
+            bounds.append((0, max_food_amount_g / 100))
 
     result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method='highs')
 
@@ -182,12 +200,16 @@ def _optimize_relaxed(
     requirements: dict,
     upper_limits: dict,
     max_food_amount_g: float,
+    fixed_foods: dict[str, float] = None,
 ) -> dict:
     """制約を緩和した最適化（ベストエフォート版）
 
     エネルギー目標を達成しつつコストを最小化する。
     他の栄養素は可能な限り摂取する。
     """
+    if fixed_foods is None:
+        fixed_foods = {}
+
     n_foods = len(foods)
     food_names = foods['food_name'].tolist()
     c = foods['price_per_100g'].values
@@ -209,13 +231,21 @@ def _optimize_relaxed(
 
     A_ub = np.array(A_ub) if A_ub else None
     b_ub = np.array(b_ub) if b_ub else None
-    bounds = [(0, max_food_amount_g / 100) for _ in range(n_foods)]
+
+    # 固定食品は上下限を同じ値に設定
+    bounds = []
+    for name in food_names:
+        if name in fixed_foods:
+            fixed_val = fixed_foods[name] / 100
+            bounds.append((fixed_val, fixed_val))
+        else:
+            bounds.append((0, max_food_amount_g / 100))
 
     result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method='highs')
 
     if not result.success:
         # さらに緩和: エネルギー制約なしでカロリー最大化
-        return _optimize_max_nutrition(foods, max_food_amount_g)
+        return _optimize_max_nutrition(foods, max_food_amount_g, fixed_foods)
 
     return _extract_amounts(result.x, food_names)
 
@@ -223,11 +253,15 @@ def _optimize_relaxed(
 def _optimize_max_nutrition(
     foods: pd.DataFrame,
     max_food_amount_g: float,
+    fixed_foods: dict[str, float] = None,
 ) -> dict:
     """栄養価を最大化（制約が厳しすぎる場合のフォールバック）
 
     コストを無視し、カロリーを最大化する。
     """
+    if fixed_foods is None:
+        fixed_foods = {}
+
     n_foods = len(foods)
     food_names = foods['food_name'].tolist()
 
@@ -238,7 +272,14 @@ def _optimize_max_nutrition(
         # エネルギー列がない場合は単純に均等配分
         c = np.ones(n_foods)
 
-    bounds = [(0, max_food_amount_g / 100) for _ in range(n_foods)]
+    # 固定食品は上下限を同じ値に設定
+    bounds = []
+    for name in food_names:
+        if name in fixed_foods:
+            fixed_val = fixed_foods[name] / 100
+            bounds.append((fixed_val, fixed_val))
+        else:
+            bounds.append((0, max_food_amount_g / 100))
 
     result = linprog(c, bounds=bounds, method='highs')
 
@@ -255,6 +296,174 @@ def _extract_amounts(x: np.ndarray, food_names: list) -> dict:
         if amount > 0.01:
             amounts[food_names[i]] = round(amount * 100, 1)
     return amounts
+
+
+# ========== Strategy-based optimization functions ==========
+
+def optimize_calorie_focused(
+    foods: pd.DataFrame,
+    requirements: dict,
+    upper_limits: dict,
+    max_food_amount_g: float,
+    fixed_foods: dict[str, float] = None,
+) -> dict:
+    """カロリー重視の最適化
+
+    カロリー目標を確実に達成しつつ、コストを最小化する。
+    他の栄養素は制約に含めない。
+    """
+    if fixed_foods is None:
+        fixed_foods = {}
+
+    food_names = foods['food_name'].tolist()
+    c = foods['price_per_100g'].values
+
+    A_ub = []
+    b_ub = []
+
+    # エネルギー下限制約（目標の95%以上）
+    if 'energy_kcal' in requirements and 'energy_kcal' in foods.columns:
+        energy_coeffs = -foods['energy_kcal'].fillna(0).values
+        A_ub.append(energy_coeffs)
+        b_ub.append(-requirements['energy_kcal'] * 0.95)
+
+    # エネルギー上限制約（目標の110%以下）
+    if 'energy_kcal' in foods.columns:
+        coeffs = foods['energy_kcal'].fillna(0).values
+        A_ub.append(coeffs)
+        target = requirements.get('energy_kcal', 2600)
+        b_ub.append(target * 1.1)
+
+    A_ub = np.array(A_ub) if A_ub else None
+    b_ub = np.array(b_ub) if b_ub else None
+
+    bounds = []
+    for name in food_names:
+        if name in fixed_foods:
+            fixed_val = fixed_foods[name] / 100
+            bounds.append((fixed_val, fixed_val))
+        else:
+            bounds.append((0, max_food_amount_g / 100))
+
+    result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method='highs')
+
+    if not result.success:
+        return {}
+
+    return _extract_amounts(result.x, food_names)
+
+
+def optimize_with_score(
+    foods: pd.DataFrame,
+    requirements: dict,
+    upper_limits: dict,
+    max_food_amount_g: float,
+    fixed_foods: dict[str, float] = None,
+    scoring_params: dict = None,
+) -> dict:
+    """カスタムスコアによる最適化
+
+    不足ペナルティとコストボーナスのバランスで最適化する。
+    線形計画法でスラック変数を使用して実装。
+
+    目的関数: minimize(cost * cost_weight - sum(slack_i * deficit_penalty * weight_i))
+    制約: nutrient_i + slack_i >= requirement_i (各栄養素)
+    """
+    if fixed_foods is None:
+        fixed_foods = {}
+    if scoring_params is None:
+        scoring_params = {
+            'deficit_penalty': 1.0,
+            'cost_bonus': 0.1,
+            'calorie_weight': 1.0,
+            'protein_weight': 1.0,
+            'vitamin_weight': 1.0,
+            'mineral_weight': 1.0,
+        }
+
+    food_names = foods['food_name'].tolist()
+    n_foods = len(foods)
+
+    # 栄養素をカテゴリ分け
+    calorie_nutrients = ['energy_kcal']
+    protein_nutrients = ['protein_g']
+    vitamin_nutrients = [k for k in requirements.keys() if 'vitamin' in k or k in ['niacin_mg', 'folate_ug', 'pantothenic_mg']]
+    mineral_nutrients = [k for k in requirements.keys() if k in ['potassium_mg', 'calcium_mg', 'magnesium_mg', 'iron_mg', 'zinc_mg']]
+    other_nutrients = [k for k in requirements.keys() if k not in calorie_nutrients + protein_nutrients + vitamin_nutrients + mineral_nutrients]
+
+    def get_weight(nutrient):
+        if nutrient in calorie_nutrients:
+            return scoring_params.get('calorie_weight', 1.0)
+        elif nutrient in protein_nutrients:
+            return scoring_params.get('protein_weight', 1.0)
+        elif nutrient in vitamin_nutrients:
+            return scoring_params.get('vitamin_weight', 1.0)
+        elif nutrient in mineral_nutrients:
+            return scoring_params.get('mineral_weight', 1.0)
+        return 1.0
+
+    # 変数: [食品量(n_foods), スラック変数(n_nutrients)]
+    nutrient_keys = [k for k in requirements.keys() if k in foods.columns]
+    n_nutrients = len(nutrient_keys)
+
+    # 目的関数係数
+    # 食品のコスト係数（最小化）
+    cost_weight = scoring_params.get('cost_bonus', 0.1)
+    deficit_penalty = scoring_params.get('deficit_penalty', 1.0)
+
+    c = np.zeros(n_foods + n_nutrients)
+    c[:n_foods] = foods['price_per_100g'].values * cost_weight
+
+    # スラック変数の係数（不足を最小化 = スラックをできるだけ小さく）
+    for i, nutrient in enumerate(nutrient_keys):
+        weight = get_weight(nutrient)
+        req = requirements[nutrient]
+        # 正規化: 不足1%あたりのペナルティ
+        c[n_foods + i] = deficit_penalty * weight * (100 / req) if req > 0 else 0
+
+    # 制約: 栄養素 + スラック >= 目標
+    # つまり: -栄養素 - スラック <= -目標
+    A_ub = []
+    b_ub = []
+
+    for i, nutrient in enumerate(nutrient_keys):
+        row = np.zeros(n_foods + n_nutrients)
+        row[:n_foods] = -foods[nutrient].fillna(0).values
+        row[n_foods + i] = -1  # スラック変数
+        A_ub.append(row)
+        b_ub.append(-requirements[nutrient])
+
+    # 上限制約（エネルギーなど）
+    for nutrient, limit in upper_limits.items():
+        if nutrient in foods.columns:
+            row = np.zeros(n_foods + n_nutrients)
+            row[:n_foods] = foods[nutrient].fillna(0).values
+            A_ub.append(row)
+            b_ub.append(limit)
+
+    A_ub = np.array(A_ub) if A_ub else None
+    b_ub = np.array(b_ub) if b_ub else None
+
+    # 境界
+    bounds = []
+    for name in food_names:
+        if name in fixed_foods:
+            fixed_val = fixed_foods[name] / 100
+            bounds.append((fixed_val, fixed_val))
+        else:
+            bounds.append((0, max_food_amount_g / 100))
+
+    # スラック変数の境界（0以上）
+    for _ in range(n_nutrients):
+        bounds.append((0, None))
+
+    result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method='highs')
+
+    if not result.success:
+        # フォールバック: 緩和版
+        return _optimize_relaxed(foods, requirements, upper_limits, max_food_amount_g, fixed_foods)
+
+    return _extract_amounts(result.x[:n_foods], food_names)
 
 
 def calculate_totals(foods: pd.DataFrame, amounts: dict) -> dict:

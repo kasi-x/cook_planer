@@ -1,4 +1,5 @@
-import type { FoodItem, OptimizeResult } from './types';
+import type { FoodItem, FixedFood, OptimizeResult, OptimizeStrategy, ScoringParams } from './types';
+import { DEFAULT_SCORING_PARAMS } from './types';
 
 const API_BASE = '/api';
 
@@ -12,7 +13,10 @@ export async function fetchFoods(): Promise<FoodItem[]> {
 
 export async function runOptimize(
   selectedFoods: string[],
-  maxFoodAmountG: number = 1500
+  fixedFoods: FixedFood[] = [],
+  maxFoodAmountG: number = 1500,
+  strategy: OptimizeStrategy = 'balanced',
+  scoringParams: ScoringParams = DEFAULT_SCORING_PARAMS
 ): Promise<OptimizeResult> {
   const response = await fetch(`${API_BASE}/optimize`, {
     method: 'POST',
@@ -20,6 +24,9 @@ export async function runOptimize(
     body: JSON.stringify({
       selected_foods: selectedFoods,
       max_food_amount_g: maxFoodAmountG,
+      fixed_foods: fixedFoods,
+      strategy: strategy,
+      scoring_params: scoringParams,
     }),
   });
   if (!response.ok) {

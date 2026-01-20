@@ -23,9 +23,11 @@ function getColor(index: number): string {
 function ContributionBar({
   contributions,
   ratio,
+  unit,
 }: {
   contributions: FoodContribution[];
   ratio: number;
+  unit: string;
 }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -45,9 +47,9 @@ function ContributionBar({
           >
             {hoveredIndex === i && (
               <div className="contribution-tooltip">
-                <strong>{c.food_name}</strong>
+                <strong>{c.food_name}</strong> ({c.amount}g)
                 <br />
-                {c.contribution} ({c.percentage}%)
+                {c.contribution} {unit} ({c.percentage}%)
               </div>
             )}
           </div>
@@ -107,7 +109,7 @@ export function NutrientTable({ nutrients }: Props) {
               </span>
               <span className="ratio">({n.ratio.toFixed(0)}%)</span>
             </div>
-            <ContributionBar contributions={n.contributions} ratio={n.ratio} />
+            <ContributionBar contributions={n.contributions} ratio={n.ratio} unit={n.unit} />
           </div>
         ))}
       </div>

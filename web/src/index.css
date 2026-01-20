@@ -461,3 +461,268 @@ h3 {
   text-overflow: ellipsis;
   max-width: 120px;
 }
+
+/* Fixed Amount Styles */
+.food-list label.fixed {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+}
+
+.food-list label.fixed:hover {
+  background: #ffe69c;
+}
+
+.fix-btn {
+  padding: 0.25rem 0.5rem;
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  margin-left: auto;
+  transition: background 0.2s;
+}
+
+.fix-btn:hover {
+  background: #5a6268;
+}
+
+.fixed-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  background: #ffc107;
+  color: #856404;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.fixed-badge:hover {
+  background: #e0a800;
+}
+
+.remove-fixed {
+  background: none;
+  border: none;
+  color: #856404;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  line-height: 1;
+}
+
+.remove-fixed:hover {
+  color: #533f03;
+}
+
+.fixed-input {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.fixed-input input {
+  width: 60px;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.fixed-input input:focus {
+  outline: none;
+  border-color: #e0a800;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.25);
+}
+
+.fixed-input button {
+  padding: 0.25rem 0.5rem;
+  background: #ffc107;
+  color: #856404;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fixed-input button:hover {
+  background: #e0a800;
+}
+
+/* Food Amounts Table */
+.food-amounts-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.food-amounts-table th,
+.food-amounts-table td {
+  padding: 0.6rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.food-amounts-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.food-amounts-table td.food-name {
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.food-amounts-table td.amount {
+  font-weight: 600;
+  color: #0f4c75;
+}
+
+.food-amounts-table td.cost {
+  font-weight: 600;
+  color: #28a745;
+}
+
+.food-amounts-table td.contribution {
+  width: 120px;
+}
+
+.contrib-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.contrib-bar-wrapper .contrib-bar {
+  height: 8px;
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  border-radius: 4px;
+  min-width: 2px;
+  max-width: 60px;
+}
+
+.contrib-bar-wrapper span {
+  font-size: 0.8rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+.food-amounts-table td.sources {
+  font-size: 0.75rem;
+}
+
+.food-amounts-table .source-price,
+.food-amounts-table .source-nutrition {
+  display: block;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+  cursor: help;
+}
+
+.food-amounts-table .source-price {
+  color: #28a745;
+}
+
+.food-amounts-table .source-nutrition {
+  color: #3498db;
+}
+
+/* Strategy Selector */
+.strategy-panel {
+  margin-top: 1rem;
+}
+
+.strategy-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.strategy-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.strategy-option:hover {
+  background: #e9ecef;
+}
+
+.strategy-option.selected {
+  background: #d4edda;
+  border: 1px solid #28a745;
+}
+
+.strategy-option input[type="radio"] {
+  margin: 0;
+}
+
+.strategy-label {
+  font-weight: 500;
+}
+
+.scoring-params {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fff3cd;
+  border-radius: 8px;
+  border: 1px solid #ffc107;
+}
+
+.scoring-params h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  color: #856404;
+}
+
+.param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.param-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.param-grid label span {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.param-grid input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.param-grid input:focus {
+  outline: none;
+  border-color: #ffc107;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.25);
+}
