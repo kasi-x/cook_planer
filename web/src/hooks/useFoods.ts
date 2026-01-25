@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { FoodItem, FixedFood, OptimizeResult, OptimizeStrategy, ScoringParams, Gender, MealType } from '../types';
 import { DEFAULT_SCORING_PARAMS } from '../types';
 import { fetchFoods, runOptimize } from '../api';
+import type { Preset } from '../components/PresetSelector';
 
 export function useFoods() {
   const [foods, setFoods] = useState<FoodItem[]>([]);
@@ -16,6 +17,7 @@ export function useFoods() {
   const [loading, setLoading] = useState(true);
   const [optimizing, setOptimizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFoods()
@@ -37,7 +39,6 @@ export function useFoods() {
   }, []);
 
   const setFixedAmount = useCallback((name: string, amount: number | null) => {
-    console.log('setFixedAmount called:', name, amount);
     setFixedFoods((prev) => {
       const next = new Map(prev);
       if (amount === null || amount <= 0) {
@@ -51,7 +52,6 @@ export function useFoods() {
           return newSelected;
         });
       }
-      console.log('fixedFoods after update:', Array.from(next.entries()));
       return next;
     });
   }, []);
@@ -64,6 +64,79 @@ export function useFoods() {
     setSelectedFoods(new Set());
     setFixedFoods(new Map());
   }, []);
+
+  const applyRecipe = useCallback((recipeFoods: { name: string; amount: number }[]) => {
+    // 利用可能な食品名のセットを作成
+    const availableFoodNames = new Set(foods.map(f => f.food_name));
+
+    // 不足している食品を追跡
+    const missingFoods: string[] = [];
+
+    // レシピの食品を固定食品として設定
+    const newFixedFoods = new Map<string, number>();
+    for (const { name, amount } of recipeFoods) {
+      if (availableFoodNames.has(name)) {
+        newFixedFoods.set(name, amount);
+      } else {
+        missingFoods.push(name);
+      }
+    }
+    setFixedFoods(newFixedFoods);
+
+    // 選択食品はクリア
+    setSelectedFoods(new Set());
+
+    // 不足食品がある場合は警告を表示
+    if (missingFoods.length > 0) {
+      setWarning(`一部の食品がデータベースにありません: ${missingFoods.slice(0, 3).join(', ')}${missingFoods.length > 3 ? ` 他${missingFoods.length - 3}件` : ''}`);
+    } else {
+      setWarning(null);
+    }
+    setError(null);
+  }, [foods]);
+
+  const applyPreset = useCallback((preset: Preset) => {
+    // 利用可能な食品名のセットを作成
+    const availableFoodNames = new Set(foods.map(f => f.food_name));
+
+    // 不足している食品を追跡
+    const missingFoods: string[] = [];
+
+    // 固定食品を設定
+    const newFixedFoods = new Map<string, number>();
+    for (const { name, amount } of preset.fixedFoods) {
+      if (availableFoodNames.has(name)) {
+        newFixedFoods.set(name, amount);
+      } else {
+        missingFoods.push(name);
+      }
+    }
+    setFixedFoods(newFixedFoods);
+
+    // 選択食品を設定（固定食品は除外）
+    const newSelectedFoods = new Set<string>();
+    for (const name of preset.selectedFoods) {
+      if (availableFoodNames.has(name) && !newFixedFoods.has(name)) {
+        newSelectedFoods.add(name);
+      } else if (!availableFoodNames.has(name)) {
+        missingFoods.push(name);
+      }
+    }
+    setSelectedFoods(newSelectedFoods);
+
+    // 年齢・性別・食事タイプを設定
+    if (preset.age !== undefined) setAge(preset.age);
+    if (preset.gender !== undefined) setGender(preset.gender);
+    if (preset.mealType !== undefined) setMealType(preset.mealType);
+
+    // 不足食品がある場合は警告を表示
+    if (missingFoods.length > 0) {
+      setWarning(`一部の食品がデータベースにありません: ${missingFoods.slice(0, 3).join(', ')}${missingFoods.length > 3 ? ` 他${missingFoods.length - 3}件` : ''}`);
+    } else {
+      setWarning(null);
+    }
+    setError(null);
+  }, [foods]);
 
   const optimize = useCallback(async () => {
     if (selectedFoods.size === 0 && fixedFoods.size === 0) {
@@ -78,15 +151,6 @@ export function useFoods() {
       const fixedFoodsArray: FixedFood[] = Array.from(fixedFoods.entries()).map(
         ([food_name, amount_g]) => ({ food_name, amount_g })
       );
-      console.log('Optimizing with:', {
-        selectedFoods: Array.from(selectedFoods),
-        fixedFoods: fixedFoodsArray,
-        strategy,
-        scoringParams,
-        age,
-        gender,
-        mealType,
-      });
       const res = await runOptimize(
         Array.from(selectedFoods),
         fixedFoodsArray,
@@ -97,7 +161,6 @@ export function useFoods() {
         gender,
         mealType
       );
-      console.log('Optimization result:', res);
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : '最適化に失敗しました');
@@ -119,6 +182,7 @@ export function useFoods() {
     loading,
     optimizing,
     error,
+    warning,
     toggleFood,
     setFixedAmount,
     setStrategy,
@@ -128,6 +192,8 @@ export function useFoods() {
     setMealType,
     selectAll,
     clearAll,
+    applyPreset,
+    applyRecipe,
     optimize,
   };
 }

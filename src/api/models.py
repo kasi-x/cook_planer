@@ -10,6 +10,8 @@ class OptimizeStrategy(str, Enum):
     CALORIE_FOCUSED = "calorie_focused"  # カロリー重視
     BALANCED = "balanced"  # バランス型（デフォルト）
     CUSTOM_SCORE = "custom_score"  # カスタムスコア
+    BEST_EFFORT = "best_effort"  # ベストエフォート（必ず結果を返す）
+    COST_LIMITED = "cost_limited"  # コスト制限（予算内で最大化）
 
 
 class ScoringParams(BaseModel):
@@ -36,6 +38,12 @@ class FixedFood(BaseModel):
     amount_g: float = Field(gt=0)
 
 
+class MinFood(BaseModel):
+    """Food with minimum amount constraint"""
+    food_name: str
+    min_g: float = Field(gt=0)
+
+
 class MealType(str, Enum):
     """Meal type for nutrition calculation"""
     DAILY = "daily"  # 1日分
@@ -48,11 +56,13 @@ class OptimizeRequest(BaseModel):
     selected_foods: list[str] = Field(default_factory=list)
     max_food_amount_g: float = Field(default=1500, gt=0)
     fixed_foods: list[FixedFood] = Field(default_factory=list)
+    min_foods: list[MinFood] = Field(default_factory=list)
     strategy: OptimizeStrategy = Field(default=OptimizeStrategy.BALANCED)
     scoring_params: ScoringParams = Field(default_factory=ScoringParams)
     age: int = Field(default=23, ge=1, le=120, description="年齢")
     gender: str = Field(default="male", description="性別 (male/female)")
     meal_type: MealType = Field(default=MealType.DAILY, description="食事タイプ")
+    max_cost: float = Field(default=500, gt=0, description="コスト上限（円）")
 
 
 class FoodAmount(BaseModel):

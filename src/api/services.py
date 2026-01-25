@@ -6,11 +6,14 @@ from src.optimize import (
     load_food_data,
     optimize_diet,
     calculate_totals,
-    DAILY_UPPER_LIMITS,
+    get_food_row,
+    get_upper_limits_for_age_gender,
     NUTRIENT_NAMES,
     _optimize_strict,
     optimize_calorie_focused,
     optimize_with_score,
+    optimize_best_effort,
+    optimize_cost_limited,
     get_requirements_for_age_gender,
     get_requirements_for_meal_type,
     AGE_GROUPS,
@@ -70,16 +73,19 @@ class FoodService:
         selected_foods: list[str],
         max_food_amount_g: float = 1500,
         fixed_foods: dict[str, float] = None,
+        min_foods: dict[str, float] = None,
         strategy: OptimizeStrategy = OptimizeStrategy.BALANCED,
         scoring_params: ScoringParams = None,
         age: int = 23,
         gender: str = "male",
         meal_type: MealType = MealType.DAILY,
+        max_cost: float = 500,
     ) -> OptimizeResult:
         """Run optimization on selected foods
 
         Args:
             fixed_foods: {食品名: 固定量(g)} の辞書
+            min_foods: {食品名: 最小量(g)} の辞書
             strategy: 最適化戦略
             scoring_params: カスタムスコアのパラメータ
             age: 年齢
@@ -88,11 +94,15 @@ class FoodService:
         """
         if fixed_foods is None:
             fixed_foods = {}
+        if min_foods is None:
+            min_foods = {}
         if scoring_params is None:
             scoring_params = ScoringParams()
 
         # 食事タイプに基づいて栄養基準を取得
         requirements = get_requirements_for_meal_type(meal_type.value, age, gender)
+        # 年齢・性別に基づいて上限を取得
+        upper_limits = get_upper_limits_for_age_gender(age, gender)
 
         if self.foods.empty:
             return OptimizeResult(
@@ -100,8 +110,8 @@ class FoodService:
                 message="食品データがありません",
             )
 
-        # 固定食品も選択食品に含める
-        all_selected = set(selected_foods) | set(fixed_foods.keys())
+        # 固定食品と最小量食品も選択食品に含める
+        all_selected = set(selected_foods) | set(fixed_foods.keys()) | set(min_foods.keys())
         selected_df = self.foods[self.foods["food_name"].isin(all_selected)]
 
         if selected_df.empty:
@@ -119,9 +129,10 @@ class FoodService:
             amounts = _optimize_strict(
                 selected_df,
                 requirements,
-                DAILY_UPPER_LIMITS,
+                upper_limits,
                 max_food_amount_g,
                 fixed_foods,
+                min_foods,
             )
             is_strict = bool(amounts)
             strategy_name = "厳密モード"
@@ -136,9 +147,10 @@ class FoodService:
             amounts = optimize_calorie_focused(
                 selected_df,
                 requirements,
-                DAILY_UPPER_LIMITS,
+                upper_limits,
                 max_food_amount_g,
                 fixed_foods,
+                min_foods,
             )
             strategy_name = "カロリー重視"
 
@@ -155,29 +167,56 @@ class FoodService:
             amounts = optimize_with_score(
                 selected_df,
                 requirements,
-                DAILY_UPPER_LIMITS,
+                upper_limits,
                 max_food_amount_g,
                 fixed_foods,
                 scoring_dict,
+                min_foods,
             )
             strategy_name = "カスタムスコア"
+
+        elif strategy == OptimizeStrategy.BEST_EFFORT:
+            # ベストエフォートモード: 必ず何かを返す
+            amounts = optimize_best_effort(
+                selected_df,
+                requirements,
+                max_food_amount_g,
+                fixed_foods,
+                min_foods,
+            )
+            strategy_name = "ベストエフォート"
+
+        elif strategy == OptimizeStrategy.COST_LIMITED:
+            # コスト制限モード: 予算内で最大化
+            amounts = optimize_cost_limited(
+                selected_df,
+                requirements,
+                upper_limits,
+                max_food_amount_g,
+                fixed_foods,
+                max_cost,
+                min_foods,
+            )
+            strategy_name = "コスト制限"
 
         else:  # BALANCED (default)
             # バランスモード: 厳密を試し、失敗したら緩和
             strict_result = _optimize_strict(
                 selected_df,
                 requirements,
-                DAILY_UPPER_LIMITS,
+                upper_limits,
                 max_food_amount_g,
                 fixed_foods,
+                min_foods,
             )
             is_strict = bool(strict_result)
             amounts = optimize_diet(
                 selected_df,
                 requirements=requirements,
-                upper_limits=DAILY_UPPER_LIMITS,
+                upper_limits=upper_limits,
                 max_food_amount_g=max_food_amount_g,
                 fixed_foods=fixed_foods,
+                min_foods=min_foods,
             )
             strategy_name = "バランス"
 
@@ -194,7 +233,9 @@ class FoodService:
         food_contributions = {}
         food_total_contributions = {}  # 各食品の全栄養素への合計貢献度
         for food_name, amount_g in amounts.items():
-            food_row = self.foods[self.foods["food_name"] == food_name].iloc[0]
+            food_row = get_food_row(self.foods, food_name)
+            if food_row is None:
+                continue  # 見つからない食品はスキップ
             ratio = amount_g / 100
             food_contributions[food_name] = {}
             total_contrib = 0
@@ -215,10 +256,12 @@ class FoodService:
         # food_amounts を計算
         food_amounts = []
         for food_name, amount_g in amounts.items():
-            food_row = self.foods[self.foods["food_name"] == food_name].iloc[0]
+            food_row = get_food_row(self.foods, food_name)
+            if food_row is None:
+                continue  # 見つからない食品はスキップ
             cost = food_row["price_per_100g"] * amount_g / 100
             contrib_pct = (
-                (food_total_contributions[food_name] / total_all_contributions * 100)
+                (food_total_contributions.get(food_name, 0) / total_all_contributions * 100)
                 if total_all_contributions > 0
                 else 0
             )

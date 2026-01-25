@@ -104,3 +104,87 @@ export interface OptimizeResult {
   monthly_cost: number;
   nutrients: NutrientStatus[];
 }
+
+// Recipe types
+export interface RecipeIngredient {
+  original_name: string;
+  amount_text: string;
+  amount_g: number | null;
+  matched_food: string | null;
+}
+
+export interface Recipe {
+  id: string;
+  name: string;
+  servings: number;
+  ingredients: RecipeIngredient[];
+}
+
+// Dish calculator types
+export interface DishNutrition {
+  name: string;
+  value: number;
+  unit: string;
+}
+
+export interface DishCalculateResult {
+  success: boolean;
+  message: string;
+  total_cost: number;
+  per_serving_cost: number;
+  nutrients: DishNutrition[];
+}
+
+// Food categories for filtering
+export type FoodCategory =
+  | 'meat'       // 肉類
+  | 'fish'       // 魚介類
+  | 'egg_dairy'  // 卵・乳製品
+  | 'soy'        // 豆類
+  | 'vegetable'  // 野菜
+  | 'mushroom'   // きのこ
+  | 'grain'      // 穀類
+  | 'fruit'      // 果物
+  | 'seaweed'    // 海藻
+  | 'seasoning'  // 調味料
+  | 'other';     // その他
+
+export const FOOD_CATEGORY_LABELS: Record<FoodCategory, string> = {
+  meat: '肉類',
+  fish: '魚介類',
+  egg_dairy: '卵・乳製品',
+  soy: '豆類',
+  vegetable: '野菜',
+  mushroom: 'きのこ',
+  grain: '穀類',
+  fruit: '果物',
+  seaweed: '海藻',
+  seasoning: '調味料',
+  other: 'その他',
+};
+
+// Categorize food by name
+export function categorizeFood(foodName: string): FoodCategory {
+  // 肉類
+  if (/鶏|豚|牛|肉|ハム|ベーコン|ソーセージ/.test(foodName)) return 'meat';
+  // 魚介類
+  if (/さけ|さば|あじ|いわし|まぐろ|たら|えび|いか|魚/.test(foodName)) return 'fish';
+  // 卵・乳製品
+  if (/卵|牛乳|ヨーグルト|チーズ|バター/.test(foodName)) return 'egg_dairy';
+  // 豆類
+  if (/豆腐|納豆|豆乳|油揚げ|厚揚げ|大豆/.test(foodName)) return 'soy';
+  // きのこ
+  if (/しいたけ|えのき|しめじ|まいたけ|エリンギ|きのこ/.test(foodName)) return 'mushroom';
+  // 穀類
+  if (/米|パン|麺|うどん|そば|パスタ/.test(foodName)) return 'grain';
+  // 果物
+  if (/バナナ|りんご|みかん|キウイ|いちご|果/.test(foodName)) return 'fruit';
+  // 海藻
+  if (/わかめ|ひじき|のり|昆布|海藻/.test(foodName)) return 'seaweed';
+  // 調味料
+  if (/味噌|醤油|塩|砂糖|酢|油/.test(foodName)) return 'seasoning';
+  // 野菜（デフォルト）
+  if (/キャベツ|にんじん|たまねぎ|ほうれん|ブロッコリー|だいこん|じゃがいも|もやし|トマト|レタス|きゅうり|ねぎ|ごぼう|れんこん|なす|ピーマン|はくさい|かぼちゃ|こまつな|みずな/.test(foodName)) return 'vegetable';
+
+  return 'other';
+}
