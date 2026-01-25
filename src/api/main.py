@@ -32,18 +32,11 @@ allowed_origins = [
     "http://127.0.0.1:3000",
 ]
 
-# 環境変数から追加のオリジンを読み込み（カンマ区切り）
-extra_origins = os.environ.get("CORS_ORIGINS", "")
-if extra_origins:
-    allowed_origins.extend([o.strip() for o in extra_origins.split(",") if o.strip()])
-
-# 本番環境では全オリジン許可も可能（CORS_ALLOW_ALL=true）
-allow_all = os.environ.get("CORS_ALLOW_ALL", "").lower() == "true"
-
+# 本番環境ではデフォルトで全オリジン許可
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if allow_all else allowed_origins,
-    allow_credentials=not allow_all,  # 全許可時はcredentials無効
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Accept"],
 )
