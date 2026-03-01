@@ -85,8 +85,11 @@ def predict_price(food_name: str, target_month: int) -> dict:
 
     # 年次トレンド
     slope, current_index = _get_yearly_trend(category)
-    # target_monthが現在から何年先か（2026年3月基準）
-    year_offset = (target_month - CURRENT_MONTH) / 12
+    # target_monthが現在から何ヶ月先か（2026年3月基準、過去月は0扱い）
+    month_diff = target_month - CURRENT_MONTH
+    if month_diff < 0:
+        month_diff += 12  # 過去月は翌年として扱う
+    year_offset = month_diff / 12
     trend_factor = 1 + (slope * year_offset / current_index) if current_index > 0 else 1.0
 
     # 季節係数

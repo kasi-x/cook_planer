@@ -96,7 +96,17 @@ def estimate_cooking_effort(menu: DailyMenuData) -> dict:
         if not slot_item or not slot_item.ingredients:
             continue
 
-        method = _get_cooking_method_from_name(slot_item.name)
+        # 食材の cooking_method が明示されていればそれを優先、なければ料理名から推定
+        explicit_methods = [
+            ing.cooking_method.value
+            for ing in slot_item.ingredients
+            if ing.food_name and ing.amount_g > 0 and hasattr(ing, 'cooking_method') and ing.cooking_method.value != "生"
+        ]
+        if explicit_methods:
+            # 最も多く指定された調理法を代表とする
+            method = max(set(explicit_methods), key=explicit_methods.count)
+        else:
+            method = _get_cooking_method_from_name(slot_item.name)
         cook_time_per_100g = COOKING_TIME_ESTIMATES.get(method, 5)
         difficulty = COOKING_DIFFICULTY.get(method, 3)
 

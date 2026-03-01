@@ -22,36 +22,6 @@ def _get_conn() -> sqlite3.Connection:
     return conn
 
 
-def init_sub_plan_tables():
-    """サブプラン用テーブルを初期化"""
-    conn = _get_conn()
-    try:
-        conn.executescript("""
-            CREATE TABLE IF NOT EXISTS sub_plans (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                parent_plan_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT DEFAULT '',
-                allergen_profile_json TEXT DEFAULT '[]',
-                created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                FOREIGN KEY (parent_plan_id) REFERENCES menu_plans(id) ON DELETE CASCADE
-            );
-
-            CREATE TABLE IF NOT EXISTS sub_plan_overrides (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                sub_plan_id INTEGER NOT NULL,
-                date TEXT NOT NULL,
-                slot TEXT NOT NULL,
-                override_item_json TEXT NOT NULL,
-                FOREIGN KEY (sub_plan_id) REFERENCES sub_plans(id) ON DELETE CASCADE,
-                UNIQUE(sub_plan_id, date, slot)
-            );
-        """)
-        conn.commit()
-    finally:
-        conn.close()
-
-
 def create_sub_plan(parent_plan_id: int, name: str, description: str = "", excluded_allergens: list[str] | None = None) -> dict:
     """サブプラン作成"""
     allergens = excluded_allergens or []

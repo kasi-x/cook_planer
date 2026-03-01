@@ -46,11 +46,11 @@ export default function CostEstimate({ menu, month, bufferPct = 10 }: Props) {
       <div className="cost-summary">
         <div className="cost-row">
           <span>予測コスト</span>
-          <span className="cost-value">&yen;{estimate.total_cost}</span>
+          <span className="cost-value">&yen;{Math.round(estimate.total_cost)}</span>
         </div>
         <div className="cost-row cost-buffered">
           <span>バッファー込み（+{estimate.buffer_pct.toFixed(0)}%）</span>
-          <span className="cost-value">&yen;{estimate.buffered_total_cost}</span>
+          <span className="cost-value">&yen;{Math.round(estimate.buffered_total_cost)}</span>
         </div>
       </div>
       <div className="cost-items">
@@ -59,7 +59,7 @@ export default function CostEstimate({ menu, month, bufferPct = 10 }: Props) {
             <span className="cost-item-slot">{SLOT_LABELS[item.slot] || item.slot}</span>
             <span className="cost-item-food">{item.food_name}</span>
             <span className="cost-item-amount">{item.amount_g}g</span>
-            <span className="cost-item-price">&yen;{item.cost}</span>
+            <span className="cost-item-price">&yen;{Math.round(item.cost)}</span>
           </div>
         ))}
       </div>

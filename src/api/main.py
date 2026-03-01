@@ -781,7 +781,7 @@ def get_allergens():
 def check_allergens(req: AllergenCheckRequest):
     """献立のアレルゲンチェック"""
     from .allergy_service import check_allergens as _check
-    return _check(req.menu, req.excluded_allergens if req.excluded_allergens else None)
+    return _check(req.menu, req.excluded_allergens)
 
 
 # --- F3: 調理変化 ---

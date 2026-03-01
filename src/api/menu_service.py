@@ -254,8 +254,8 @@ class MenuService:
             new_end = source_end + delta
 
             cursor = conn.execute(
-                "INSERT INTO menu_plans (name, grade_level, start_date, end_date) VALUES (?, ?, ?, ?)",
-                (req.new_name, source["grade_level"], req.start_date, new_end.strftime("%Y-%m-%d")),
+                "INSERT INTO menu_plans (name, grade_level, start_date, end_date, allergen_profile_json) VALUES (?, ?, ?, ?, ?)",
+                (req.new_name, source["grade_level"], req.start_date, new_end.strftime("%Y-%m-%d"), source["allergen_profile_json"]),
             )
             new_plan_id = cursor.lastrowid
 
