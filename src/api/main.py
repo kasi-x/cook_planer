@@ -21,6 +21,16 @@ from .menu_models import (
     SchoolGradeLevel,
     GRADE_AGE_MAP,
     GRADE_LABELS,
+    SeasonalCheckRequest,
+    AllergenCheckRequest,
+    CookingChangeRequest,
+    PricePredictRequest,
+    MenuCostRequest,
+    SubPlanCreate,
+    SubPlanOverrideRequest,
+    CombinationCheckRequest,
+    CookingEffortRequest,
+    CookingMethod,
 )
 from .menu_service import menu_service as menu_svc
 from src.scrapers.recipe_scraper import (
@@ -740,3 +750,166 @@ def get_nutrition_standards(grade_level: SchoolGradeLevel):
         "age": age,
         "nutrients": result,
     }
+
+
+# --- F1: 季節の食べもの ---
+
+@app.get("/api/seasonal/foods")
+def get_seasonal_foods(month: int = 3):
+    """旬食材一覧を取得"""
+    from .seasonal_service import get_seasonal_foods as _get_seasonal
+    return _get_seasonal(month)
+
+
+@app.post("/api/seasonal/check")
+def check_seasonal(req: SeasonalCheckRequest):
+    """献立の旬食材チェック"""
+    from .seasonal_service import get_seasonal_recommendation
+    return get_seasonal_recommendation(req.menu, req.month)
+
+
+# --- F2: アレルギー管理 ---
+
+@app.get("/api/allergens")
+def get_allergens():
+    """アレルゲン一覧を取得"""
+    from .allergy_service import get_allergen_list
+    return get_allergen_list()
+
+
+@app.post("/api/allergens/check")
+def check_allergens(req: AllergenCheckRequest):
+    """献立のアレルゲンチェック"""
+    from .allergy_service import check_allergens as _check
+    return _check(req.menu, req.excluded_allergens if req.excluded_allergens else None)
+
+
+# --- F3: 調理変化 ---
+
+@app.post("/api/cooking/change")
+def get_cooking_change(req: CookingChangeRequest):
+    """調理法適用後の栄養変化を取得"""
+    from .cooking_nutrition_service import apply_cooking_change
+    return apply_cooking_change(req.food_name, req.amount_g, req.method.value)
+
+
+@app.get("/api/cooking/methods/{food_name}")
+def get_cooking_methods(food_name: str):
+    """食品で利用可能な調理法を取得"""
+    from .cooking_nutrition_service import get_available_methods
+    return get_available_methods(food_name)
+
+
+# --- F4: 価格予測 ---
+
+@app.post("/api/price/predict")
+def predict_food_price(req: PricePredictRequest):
+    """食材価格を予測"""
+    from .price_service import predict_price
+    return predict_price(req.food_name, req.target_month)
+
+
+@app.post("/api/price/menu-cost")
+def estimate_menu_cost(req: MenuCostRequest):
+    """献立コストを推定"""
+    from .price_service import estimate_menu_cost_with_buffer
+    return estimate_menu_cost_with_buffer(req.menu, req.target_month, req.buffer_pct)
+
+
+@app.get("/api/price/category-history/{category}")
+def get_category_history(category: str):
+    """カテゴリの価格推移を取得"""
+    from .price_service import get_category_price_history
+    return get_category_price_history(category)
+
+
+# --- F6: サブプラン ---
+
+@app.post("/api/menus/{plan_id}/sub-plans")
+def create_sub_plan(plan_id: int, req: SubPlanCreate):
+    """サブプランを作成"""
+    from .sub_plan_service import create_sub_plan as _create
+    return _create(plan_id, req.name, req.description, req.excluded_allergens)
+
+
+@app.get("/api/menus/{plan_id}/sub-plans")
+def get_sub_plans(plan_id: int):
+    """サブプラン一覧を取得"""
+    from .sub_plan_service import get_sub_plans as _get
+    return _get(plan_id)
+
+
+@app.get("/api/menus/sub-plans/{sub_plan_id}")
+def get_sub_plan(sub_plan_id: int):
+    """サブプランを取得"""
+    from .sub_plan_service import get_sub_plan as _get
+    from fastapi import HTTPException
+    plan = _get(sub_plan_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Sub-plan not found")
+    return plan
+
+
+@app.delete("/api/menus/sub-plans/{sub_plan_id}")
+def delete_sub_plan(sub_plan_id: int):
+    """サブプランを削除"""
+    from .sub_plan_service import delete_sub_plan as _del
+    from fastapi import HTTPException
+    if not _del(sub_plan_id):
+        raise HTTPException(status_code=404, detail="Sub-plan not found")
+    return {"ok": True}
+
+
+@app.get("/api/menus/sub-plans/{sub_plan_id}/daily")
+def get_sub_plan_daily(sub_plan_id: int, date: str):
+    """サブプラン日別メニューを取得"""
+    from .sub_plan_service import get_sub_plan as _get_plan, get_sub_plan_menu
+    from fastapi import HTTPException
+
+    sub_plan = _get_plan(sub_plan_id)
+    if not sub_plan:
+        raise HTTPException(status_code=404, detail="Sub-plan not found")
+
+    parent_menu_resp = menu_svc.get_daily_menu(sub_plan["parent_plan_id"], date)
+    return get_sub_plan_menu(sub_plan_id, date, parent_menu_resp.menu)
+
+
+@app.put("/api/menus/sub-plans/{sub_plan_id}/override")
+def set_sub_plan_override(sub_plan_id: int, req: SubPlanOverrideRequest):
+    """サブプランのオーバーライドを設定"""
+    from .sub_plan_service import set_override
+    return set_override(sub_plan_id, req.date, req.slot, req.item)
+
+
+@app.get("/api/menus/sub-plans/{sub_plan_id}/suggest")
+def suggest_sub_plan_alternatives(sub_plan_id: int, date: str):
+    """サブプランの代替候補を自動提案"""
+    from .sub_plan_service import get_sub_plan as _get_plan, auto_suggest_alternatives
+    from fastapi import HTTPException
+
+    sub_plan = _get_plan(sub_plan_id)
+    if not sub_plan:
+        raise HTTPException(status_code=404, detail="Sub-plan not found")
+
+    parent_menu_resp = menu_svc.get_daily_menu(sub_plan["parent_plan_id"], date)
+    return auto_suggest_alternatives(parent_menu_resp.menu, sub_plan["excluded_allergens"])
+
+
+# --- F7: 食べ合わせ ---
+
+@app.post("/api/combinations/check")
+def check_food_combinations(req: CombinationCheckRequest):
+    """食べ合わせチェック"""
+    from .food_combination_service import check_combinations
+    return check_combinations(req.menu)
+
+
+# --- F8: 調理工数 ---
+
+@app.post("/api/cooking/effort")
+def get_cooking_effort(req: CookingEffortRequest):
+    """調理工数を計算"""
+    from .cooking_effort_service import estimate_cooking_effort, suggest_time_reduction
+    effort = estimate_cooking_effort(req.menu)
+    suggestions = suggest_time_reduction(req.menu)
+    return {**effort, "suggestions": suggestions}

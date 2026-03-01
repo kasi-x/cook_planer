@@ -139,6 +139,7 @@ export default function App() {
               gradeLevel={menu.currentPlan.grade_level}
               recipes={recipes}
               foods={foods}
+              planId={menu.currentPlan.id}
               onSave={handleSaveMenu}
               onClose={handleEditorClose}
             />

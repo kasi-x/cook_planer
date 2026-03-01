@@ -12,6 +12,16 @@ class SchoolGradeLevel(str, Enum):
     JUNIOR_HIGH = "junior_high"         # 中学校 (12-14歳)
 
 
+class CookingMethod(str, Enum):
+    """調理法"""
+    RAW = "生"
+    BOILED = "ゆで"
+    GRILLED = "焼き"
+    FRIED = "揚げ"
+    STEAMED = "蒸し"
+    STIR_FRIED = "炒め"
+
+
 GRADE_AGE_MAP = {
     SchoolGradeLevel.ELEMENTARY_LOW: 7,
     SchoolGradeLevel.ELEMENTARY_MID: 9,
@@ -33,6 +43,7 @@ class MealIngredient(BaseModel):
     """食材"""
     food_name: str
     amount_g: float = Field(ge=0)
+    cooking_method: CookingMethod = CookingMethod.RAW
 
 
 class MealItem(BaseModel):
@@ -58,6 +69,7 @@ class MenuPlanCreate(BaseModel):
     grade_level: SchoolGradeLevel = SchoolGradeLevel.ELEMENTARY_MID
     start_date: str  # YYYY-MM-DD
     end_date: str    # YYYY-MM-DD
+    allergen_profile: list[str] = Field(default_factory=list)
 
 
 class MenuPlanUpdate(BaseModel):
@@ -66,6 +78,7 @@ class MenuPlanUpdate(BaseModel):
     grade_level: SchoolGradeLevel | None = None
     start_date: str | None = None
     end_date: str | None = None
+    allergen_profile: list[str] | None = None
 
 
 class DailyMenuUpdate(BaseModel):
@@ -104,6 +117,7 @@ class MenuPlanResponse(BaseModel):
     start_date: str
     end_date: str
     created_at: str
+    allergen_profile: list[str] = Field(default_factory=list)
 
 
 class DailyMenuResponse(BaseModel):
@@ -139,3 +153,73 @@ class WeeklyNutritionResult(BaseModel):
     weekly_average: list[NutrientResult]
     total_cost: float
     average_achievement_rate: float
+
+
+# --- F1: 季節の食べもの ---
+
+class SeasonalCheckRequest(BaseModel):
+    """季節チェックリクエスト"""
+    menu: DailyMenuData
+    month: int = Field(ge=1, le=12)
+
+
+# --- F2: アレルギー管理 ---
+
+class AllergenCheckRequest(BaseModel):
+    """アレルゲンチェックリクエスト"""
+    menu: DailyMenuData
+    excluded_allergens: list[str] = Field(default_factory=list)
+
+
+# --- F3: 調理変化 ---
+
+class CookingChangeRequest(BaseModel):
+    """調理変化リクエスト"""
+    food_name: str
+    amount_g: float = Field(ge=0)
+    method: CookingMethod
+
+
+# --- F4: 価格予測 ---
+
+class PricePredictRequest(BaseModel):
+    """価格予測リクエスト"""
+    food_name: str
+    target_month: int = Field(ge=1, le=12)
+
+
+class MenuCostRequest(BaseModel):
+    """献立コスト推定リクエスト"""
+    menu: DailyMenuData
+    target_month: int = Field(ge=1, le=12)
+    buffer_pct: float = 10.0
+
+
+# --- F6: サブプラン ---
+
+class SubPlanCreate(BaseModel):
+    """サブプラン作成リクエスト"""
+    name: str
+    description: str = ""
+    excluded_allergens: list[str] = Field(default_factory=list)
+
+
+class SubPlanOverrideRequest(BaseModel):
+    """サブプランオーバーライドリクエスト"""
+    date: str
+    slot: str
+    item: dict
+
+
+# --- F7: 食べ合わせ ---
+
+class CombinationCheckRequest(BaseModel):
+    """食べ合わせチェックリクエスト"""
+    menu: DailyMenuData
+
+
+# --- F8: 調理工数 ---
+
+class CookingEffortRequest(BaseModel):
+    """調理工数リクエスト"""
+    menu: DailyMenuData

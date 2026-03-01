@@ -7,6 +7,14 @@ import type {
   FoodItem,
   Recipe,
   SchoolGradeLevel,
+  SeasonalFood,
+  SeasonalRecommendation,
+  AllergenInfo,
+  AllergenWarning,
+  MenuCostEstimate,
+  SubPlan,
+  CombinationResult,
+  CookingEffortResult,
 } from './types';
 
 const BASE = '/api';
@@ -117,4 +125,87 @@ export function fetchFoods(): Promise<FoodItem[]> {
 
 export function fetchRecipes(): Promise<Recipe[]> {
   return fetchJSON(`${BASE}/recipes`);
+}
+
+// --- F1: 季節の食べもの ---
+
+export function fetchSeasonalFoods(month: number): Promise<SeasonalFood[]> {
+  return fetchJSON(`${BASE}/seasonal/foods?month=${month}`);
+}
+
+export function checkSeasonal(menu: DailyMenuData, month: number): Promise<SeasonalRecommendation> {
+  return fetchJSON(`${BASE}/seasonal/check`, {
+    method: 'POST',
+    body: JSON.stringify({ menu, month }),
+  });
+}
+
+// --- F2: アレルギー管理 ---
+
+export function fetchAllergens(): Promise<AllergenInfo[]> {
+  return fetchJSON(`${BASE}/allergens`);
+}
+
+export function checkAllergens(menu: DailyMenuData, excludedAllergens: string[]): Promise<AllergenWarning[]> {
+  return fetchJSON(`${BASE}/allergens/check`, {
+    method: 'POST',
+    body: JSON.stringify({ menu, excluded_allergens: excludedAllergens }),
+  });
+}
+
+// --- F4/F5: 価格予測・バッファー ---
+
+export function estimateMenuCost(menu: DailyMenuData, targetMonth: number, bufferPct: number = 10): Promise<MenuCostEstimate> {
+  return fetchJSON(`${BASE}/price/menu-cost`, {
+    method: 'POST',
+    body: JSON.stringify({ menu, target_month: targetMonth, buffer_pct: bufferPct }),
+  });
+}
+
+// --- F6: サブプラン ---
+
+export function fetchSubPlans(planId: number): Promise<SubPlan[]> {
+  return fetchJSON(`${BASE}/menus/${planId}/sub-plans`);
+}
+
+export function createSubPlan(planId: number, data: { name: string; description?: string; excluded_allergens?: string[] }): Promise<SubPlan> {
+  return fetchJSON(`${BASE}/menus/${planId}/sub-plans`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteSubPlan(subPlanId: number): Promise<void> {
+  return fetchJSON(`${BASE}/menus/sub-plans/${subPlanId}`, { method: 'DELETE' });
+}
+
+export function fetchSubPlanDaily(subPlanId: number, date: string) {
+  return fetchJSON<{ sub_plan_id: number; date: string; menu: DailyMenuData; overrides: Record<string, unknown> }>(
+    `${BASE}/menus/sub-plans/${subPlanId}/daily?date=${date}`
+  );
+}
+
+export function setSubPlanOverride(subPlanId: number, date: string, slot: string, item: Record<string, unknown>) {
+  return fetchJSON(`${BASE}/menus/sub-plans/${subPlanId}/override`, {
+    method: 'PUT',
+    body: JSON.stringify({ date, slot, item }),
+  });
+}
+
+// --- F7: 食べ合わせ ---
+
+export function checkCombinations(menu: DailyMenuData): Promise<CombinationResult> {
+  return fetchJSON(`${BASE}/combinations/check`, {
+    method: 'POST',
+    body: JSON.stringify({ menu }),
+  });
+}
+
+// --- F8: 調理工数 ---
+
+export function estimateCookingEffort(menu: DailyMenuData): Promise<CookingEffortResult> {
+  return fetchJSON(`${BASE}/cooking/effort`, {
+    method: 'POST',
+    body: JSON.stringify({ menu }),
+  });
 }

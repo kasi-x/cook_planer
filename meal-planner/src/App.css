@@ -431,6 +431,11 @@ body {
   width: 70px;
 }
 
+.cooking-method-select {
+  width: 60px;
+  flex-shrink: 0;
+}
+
 .ingredient-row .remove-btn {
   background: none;
   border: none;
@@ -693,6 +698,515 @@ body {
   border: 1px solid #dfe6e9;
   border-radius: 6px;
   font-size: 14px;
+}
+
+/* Modal Wide (for MenuEditor with panels) */
+.modal-wide {
+  max-width: 1100px;
+}
+
+/* Panel Tabs */
+.panel-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 12px;
+  background: #e8eaef;
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.panel-tab {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #636e72;
+  transition: all 0.2s;
+}
+
+.panel-tab.active {
+  background: #fff;
+  color: #2d3436;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.analysis-panels {
+  min-width: 300px;
+}
+
+/* Seasonal Badge */
+.seasonal-badge-compact {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  background: #00b894;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.seasonal-panel {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.seasonal-panel h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.seasonal-ratio {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.seasonal-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.seasonal-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #636e72;
+  margin-right: 4px;
+}
+
+.seasonal-tag {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.seasonal-tag.in-season {
+  background: #d4edda;
+  color: #155724;
+}
+
+.seasonal-tag.off-season {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.seasonal-suggestion {
+  font-size: 12px;
+  color: #636e72;
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: #fff;
+  border-radius: 4px;
+  border-left: 3px solid #fdcb6e;
+}
+
+/* Allergen Selector */
+.allergen-selector {
+  margin: 8px 0;
+}
+
+.allergen-group {
+  margin-bottom: 8px;
+}
+
+.allergen-group h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #636e72;
+  margin-bottom: 4px;
+}
+
+.allergen-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.allergen-chip {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid #dfe6e9;
+  background: #fff;
+  color: #636e72;
+}
+
+.allergen-chip.mandatory { border-color: #e17055; }
+.allergen-chip.recommended { border-color: #fdcb6e; }
+
+.allergen-chip.selected {
+  color: #fff;
+}
+.allergen-chip.mandatory.selected { background: #e17055; border-color: #e17055; }
+.allergen-chip.recommended.selected { background: #fdcb6e; color: #2d3436; border-color: #fdcb6e; }
+
+/* Allergen Warning */
+.allergen-warning-panel {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #ffeaea;
+  border-radius: 8px;
+  border-left: 4px solid #e17055;
+}
+
+.allergen-warning-panel h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e17055;
+  margin-bottom: 6px;
+}
+
+.allergen-warning-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.allergen-warning-icon {
+  font-weight: 700;
+  color: #e17055;
+  width: 18px;
+  text-align: center;
+}
+
+.allergen-warning-slot {
+  color: #636e72;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+/* Cost Estimate */
+.cost-estimate-panel {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.cost-estimate-panel h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.cost-loading {
+  font-size: 13px;
+  color: #636e72;
+}
+
+.cost-summary {
+  margin-bottom: 10px;
+}
+
+.cost-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.cost-value {
+  font-weight: 600;
+}
+
+.cost-buffered {
+  color: #636e72;
+}
+
+.cost-items {
+  border-top: 1px solid #dfe6e9;
+  padding-top: 8px;
+}
+
+.cost-item {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  padding: 3px 0;
+  align-items: center;
+}
+
+.cost-item-slot {
+  color: #636e72;
+  width: 36px;
+  flex-shrink: 0;
+}
+
+.cost-item-food {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cost-item-amount {
+  color: #636e72;
+  width: 40px;
+  text-align: right;
+}
+
+.cost-item-price {
+  font-weight: 500;
+  width: 45px;
+  text-align: right;
+}
+
+/* Combination Check */
+.combination-panel {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.combination-panel h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.combination-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.combination-good {
+  background: #d4edda;
+}
+
+.combination-bad {
+  background: #f8d7da;
+}
+
+.combination-icon {
+  font-weight: 700;
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.combination-good .combination-icon { color: #00b894; }
+.combination-bad .combination-icon { color: #e17055; }
+
+.combination-suggestions {
+  margin-top: 8px;
+}
+
+.combination-suggestion {
+  font-size: 12px;
+  color: #636e72;
+  padding: 4px 8px;
+  background: #fff;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  border-left: 3px solid #74b9ff;
+}
+
+/* Cooking Effort */
+.cooking-effort-panel {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.cooking-effort-panel h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.effort-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.effort-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.effort-label {
+  font-size: 11px;
+  color: #636e72;
+}
+
+.effort-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.effort-sub {
+  font-size: 10px;
+  color: #636e72;
+}
+
+.effort-easy { color: #00b894; }
+.effort-normal { color: #fdcb6e; }
+.effort-hard { color: #e17055; }
+
+.effort-detail {
+  border-top: 1px solid #dfe6e9;
+  padding-top: 8px;
+}
+
+.effort-breakdown {
+  font-size: 12px;
+  color: #636e72;
+  margin-bottom: 6px;
+}
+
+.effort-slot {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  padding: 3px 0;
+}
+
+.effort-slot-name {
+  width: 50px;
+  font-weight: 500;
+}
+
+.effort-slot-method {
+  color: #636e72;
+  width: 40px;
+}
+
+.effort-slot-time {
+  font-weight: 500;
+}
+
+.effort-suggestions {
+  margin-top: 8px;
+  border-top: 1px solid #dfe6e9;
+  padding-top: 8px;
+}
+
+.effort-suggestion {
+  font-size: 12px;
+  color: #636e72;
+  padding: 4px 8px;
+  background: #fff;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  border-left: 3px solid #fdcb6e;
+}
+
+.effort-saved {
+  color: #00b894;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+/* Sub Plan Manager */
+.sub-plan-manager {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #f0f8ff;
+  border-radius: 8px;
+}
+
+.sub-plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sub-plan-header h4 {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sub-plan-add-btn {
+  background: none;
+  border: 1px solid #74b9ff;
+  border-radius: 4px;
+  color: #0984e3;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sub-plan-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+}
+
+.sub-plan-name-input {
+  padding: 6px 10px;
+  border: 1px solid #dfe6e9;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.sub-plan-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.sub-plan-tab-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.sub-plan-tab {
+  padding: 4px 10px;
+  border: 1px solid #dfe6e9;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #fff;
+  color: #636e72;
+  transition: all 0.15s;
+}
+
+.sub-plan-tab.active {
+  background: #0984e3;
+  color: #fff;
+  border-color: #0984e3;
+}
+
+.sub-plan-delete-btn {
+  background: none;
+  border: none;
+  color: #e17055;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.sub-plan-info {
+  font-size: 12px;
+  color: #636e72;
+  margin-top: 6px;
 }
 
 /* Responsive */

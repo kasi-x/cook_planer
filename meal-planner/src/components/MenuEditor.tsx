@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { DailyMenuData, MealItem, FoodItem, Recipe, SchoolGradeLevel, MealSlotType, DailyNutritionResult } from '../types';
-import { emptyMenu } from '../types';
+import type { DailyMenuData, MealItem, FoodItem, Recipe, SchoolGradeLevel, MealSlotType, DailyNutritionResult, SubPlan } from '../types';
+import { emptyMenu, getMonthFromDate } from '../types';
 import MealSlot from './MealSlot';
 import NutritionSummary from './NutritionSummary';
+import SeasonalBadge from './SeasonalBadge';
+import AllergenWarningPanel from './AllergenWarning';
+import CostEstimate from './CostEstimate';
+import CombinationCheck from './CombinationCheck';
+import CookingEffort from './CookingEffort';
+import SubPlanManager from './SubPlanManager';
 import { analyzeDailyNutrition } from '../api';
 
 const SLOTS: MealSlotType[] = ['staple', 'main_dish', 'side_dish', 'soup', 'dessert'];
@@ -13,18 +19,27 @@ interface Props {
   gradeLevel: SchoolGradeLevel;
   recipes: Recipe[];
   foods: FoodItem[];
+  planId: number;
   onSave: (date: string, menu: DailyMenuData) => Promise<void>;
   onClose: () => void;
 }
 
-export default function MenuEditor({ date, menu, gradeLevel, recipes, foods, onSave, onClose }: Props) {
+export default function MenuEditor({ date, menu, gradeLevel, recipes, foods, planId, onSave, onClose }: Props) {
   const [editMenu, setEditMenu] = useState<DailyMenuData>(() =>
     menu ? JSON.parse(JSON.stringify(menu)) : emptyMenu()
   );
   const [nutrition, setNutrition] = useState<DailyNutritionResult | null>(null);
   const [nutritionLoading, setNutritionLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [currentSubPlan, setCurrentSubPlan] = useState<SubPlan | null>(null);
+  const [activePanel, setActivePanel] = useState<'nutrition' | 'seasonal' | 'cost' | 'combination' | 'effort'>('nutrition');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // 日付から月を取得
+  const month = getMonthFromDate(date);
+
+  // 除外アレルゲン（サブプランから取得）
+  const excludedAllergens = currentSubPlan?.excluded_allergens || [];
 
   const updateSlot = useCallback((slot: MealSlotType, item: MealItem | null) => {
     setEditMenu(prev => ({ ...prev, [slot]: item }));
@@ -71,12 +86,22 @@ export default function MenuEditor({ date, menu, gradeLevel, recipes, foods, onS
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+      <div className="modal-content modal-wide" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{dateLabel}の献立</h2>
           <button className="modal-close" onClick={onClose}>&times;</button>
         </div>
         <div className="modal-body">
+          {/* サブプラン管理 */}
+          <SubPlanManager
+            planId={planId}
+            currentSubPlan={currentSubPlan}
+            onSelect={setCurrentSubPlan}
+          />
+
+          {/* アレルゲン警告 */}
+          <AllergenWarningPanel menu={editMenu} excludedAllergens={excludedAllergens} />
+
           <div className="editor-layout">
             <div className="meal-slots">
               {SLOTS.map(slot => (
@@ -99,7 +124,34 @@ export default function MenuEditor({ date, menu, gradeLevel, recipes, foods, onS
                 <label htmlFor="milk-check">牛乳 (200ml)</label>
               </div>
             </div>
-            <NutritionSummary nutrition={nutrition} loading={nutritionLoading} />
+
+            <div className="analysis-panels">
+              {/* パネル切替タブ */}
+              <div className="panel-tabs">
+                <button className={`panel-tab ${activePanel === 'nutrition' ? 'active' : ''}`} onClick={() => setActivePanel('nutrition')}>栄養</button>
+                <button className={`panel-tab ${activePanel === 'cost' ? 'active' : ''}`} onClick={() => setActivePanel('cost')}>コスト</button>
+                <button className={`panel-tab ${activePanel === 'seasonal' ? 'active' : ''}`} onClick={() => setActivePanel('seasonal')}>旬</button>
+                <button className={`panel-tab ${activePanel === 'combination' ? 'active' : ''}`} onClick={() => setActivePanel('combination')}>食合せ</button>
+                <button className={`panel-tab ${activePanel === 'effort' ? 'active' : ''}`} onClick={() => setActivePanel('effort')}>工数</button>
+              </div>
+
+              {/* パネル内容 */}
+              {activePanel === 'nutrition' && (
+                <NutritionSummary nutrition={nutrition} loading={nutritionLoading} />
+              )}
+              {activePanel === 'cost' && (
+                <CostEstimate menu={editMenu} month={month} />
+              )}
+              {activePanel === 'seasonal' && (
+                <SeasonalBadge menu={editMenu} month={month} />
+              )}
+              {activePanel === 'combination' && (
+                <CombinationCheck menu={editMenu} />
+              )}
+              {activePanel === 'effort' && (
+                <CookingEffort menu={editMenu} />
+              )}
+            </div>
           </div>
         </div>
         <div className="modal-footer">

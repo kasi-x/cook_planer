@@ -1,5 +1,5 @@
 import type { DailyMenu } from '../types';
-import { getMenuSlotNames } from '../types';
+import { getMenuSlotNames, getMonthFromDate, hasSeasonalIngredients } from '../types';
 
 interface Props {
   date: string;
@@ -24,6 +24,8 @@ export default function DayCell({ date, dailyMenu, achievementRate, isCurrentMon
   const menuData = dailyMenu?.menu;
   const names = menuData ? getMenuSlotNames(menuData) : [];
   const hasMenu = names.length > 0;
+  const month = getMonthFromDate(date);
+  const showSeasonal = hasMenu && menuData ? hasSeasonalIngredients(menuData, month) : false;
 
   return (
     <div
@@ -40,6 +42,9 @@ export default function DayCell({ date, dailyMenu, achievementRate, isCurrentMon
           ))}
           {names.length > 3 && <div className="dish-name">...</div>}
         </div>
+      )}
+      {showSeasonal && (
+        <span className="seasonal-badge-compact" title="旬の食材を使用中">旬</span>
       )}
       <div className={`achievement-badge ${
         achievementRate !== null ? getBadgeClass(achievementRate) : 'badge-gray'

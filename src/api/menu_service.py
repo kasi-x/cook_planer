@@ -27,6 +27,8 @@ from src.optimize import (
     NUTRIENT_NAMES,
     NUTRIENT_UNITS,
 )
+from src.merge_data import FOOD_NAME_MAPPING
+from .cooking_nutrition_service import find_cooked_variant, get_waste_rate, get_cooked_nutrition
 
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "menus.db"
 
@@ -75,6 +77,38 @@ class MenuService:
                     FOREIGN KEY (plan_id) REFERENCES menu_plans(id) ON DELETE CASCADE,
                     UNIQUE(plan_id, date)
                 );
+
+                -- allergen_profile_json カラムを追加（既存テーブルの場合）
+                -- SQLite では IF NOT EXISTS な ADD COLUMN がないため、エラーを無視する
+            """)
+            # allergen_profile_json カラムを追加（既存テーブル対応）
+            try:
+                conn.execute(
+                    "ALTER TABLE menu_plans ADD COLUMN allergen_profile_json TEXT DEFAULT '[]'"
+                )
+            except sqlite3.OperationalError:
+                pass  # カラム既存の場合は無視
+
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS sub_plans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    parent_plan_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT DEFAULT '',
+                    allergen_profile_json TEXT DEFAULT '[]',
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    FOREIGN KEY (parent_plan_id) REFERENCES menu_plans(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS sub_plan_overrides (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sub_plan_id INTEGER NOT NULL,
+                    date TEXT NOT NULL,
+                    slot TEXT NOT NULL,
+                    override_item_json TEXT NOT NULL,
+                    FOREIGN KEY (sub_plan_id) REFERENCES sub_plans(id) ON DELETE CASCADE,
+                    UNIQUE(sub_plan_id, date, slot)
+                );
             """)
             conn.commit()
         finally:
@@ -85,9 +119,10 @@ class MenuService:
     def create_plan(self, req: MenuPlanCreate) -> MenuPlanResponse:
         conn = self._get_conn()
         try:
+            allergen_json = json.dumps(req.allergen_profile, ensure_ascii=False)
             cursor = conn.execute(
-                "INSERT INTO menu_plans (name, grade_level, start_date, end_date) VALUES (?, ?, ?, ?)",
-                (req.name, req.grade_level.value, req.start_date, req.end_date),
+                "INSERT INTO menu_plans (name, grade_level, start_date, end_date, allergen_profile_json) VALUES (?, ?, ?, ?, ?)",
+                (req.name, req.grade_level.value, req.start_date, req.end_date, allergen_json),
             )
             conn.commit()
             plan_id = cursor.lastrowid
@@ -122,9 +157,14 @@ class MenuService:
             grade = req.grade_level.value if req.grade_level is not None else existing["grade_level"]
             start = req.start_date if req.start_date is not None else existing["start_date"]
             end = req.end_date if req.end_date is not None else existing["end_date"]
+            allergen_json = (
+                json.dumps(req.allergen_profile, ensure_ascii=False)
+                if req.allergen_profile is not None
+                else existing["allergen_profile_json"]
+            )
             conn.execute(
-                "UPDATE menu_plans SET name=?, grade_level=?, start_date=?, end_date=? WHERE id=?",
-                (name, grade, start, end, plan_id),
+                "UPDATE menu_plans SET name=?, grade_level=?, start_date=?, end_date=?, allergen_profile_json=? WHERE id=?",
+                (name, grade, start, end, allergen_json, plan_id),
             )
             conn.commit()
             row = conn.execute("SELECT * FROM menu_plans WHERE id = ?", (plan_id,)).fetchone()
@@ -247,13 +287,39 @@ class MenuService:
         age = GRADE_AGE_MAP[grade_level]
         standards = get_school_lunch_requirements(age)
 
-        # 全食材を集約
-        amounts: dict[str, float] = {}
+        # 全食材を集約（調理法を考慮）
+        raw_amounts: dict[str, float] = {}  # 生食材 → calculate_totals で計算
+        cooked_nutrition_extra: dict[str, float] = {}  # 調理済みの栄養価加算分
+        cooked_cost_extra: float = 0.0
+
         for slot in [menu.staple, menu.main_dish, menu.side_dish, menu.soup, menu.dessert]:
             if slot:
                 for ing in slot.ingredients:
                     if ing.food_name and ing.amount_g > 0:
-                        amounts[ing.food_name] = amounts.get(ing.food_name, 0) + ing.amount_g
+                        method = ing.cooking_method.value if ing.cooking_method else "生"
+
+                        if method != "生":
+                            # 価格データ食品名→MEXT食品名に変換して調理済み食品を検索
+                            mext_name = FOOD_NAME_MAPPING.get(ing.food_name)
+                            if mext_name:
+                                cooked_nutr = get_cooked_nutrition(mext_name, method)
+                                if cooked_nutr:
+                                    # 廃棄率を適用
+                                    waste_rate = get_waste_rate(mext_name)
+                                    effective_g = ing.amount_g * (1 - waste_rate / 100)
+                                    ratio = effective_g / 100
+                                    for key, val in cooked_nutr.items():
+                                        if key not in ("food_name", "method", "waste_rate"):
+                                            cooked_nutrition_extra[key] = cooked_nutrition_extra.get(key, 0) + val * ratio
+                                    # コストは元の食品名の価格で計算（生の価格データを使用）
+                                    food_row = foods_df[foods_df["food_name"] == ing.food_name]
+                                    if not food_row.empty:
+                                        cooked_cost_extra += float(food_row.iloc[0]["price_per_100g"]) * ing.amount_g / 100
+                                    continue  # calculate_totals には渡さない
+                            # MEXT名が見つからない場合は生として扱う
+                        raw_amounts[ing.food_name] = raw_amounts.get(ing.food_name, 0) + ing.amount_g
+
+        amounts = raw_amounts
 
         # 牛乳を追加
         if menu.milk:
@@ -264,6 +330,12 @@ class MenuService:
             totals = calculate_totals(foods_df, amounts)
         else:
             totals = {"total_cost": 0}
+
+        # 調理済み食材の栄養価とコストを加算
+        if cooked_nutrition_extra:
+            for key, val in cooked_nutrition_extra.items():
+                totals[key] = totals.get(key, 0) + val
+            totals["total_cost"] = totals.get("total_cost", 0) + cooked_cost_extra
 
         # 基準と比較
         nutrients = []
@@ -349,6 +421,7 @@ class MenuService:
 
     @staticmethod
     def _row_to_plan(row: sqlite3.Row) -> MenuPlanResponse:
+        allergen_json = row["allergen_profile_json"] if "allergen_profile_json" in row.keys() else "[]"
         return MenuPlanResponse(
             id=row["id"],
             name=row["name"],
@@ -356,6 +429,7 @@ class MenuService:
             start_date=row["start_date"],
             end_date=row["end_date"],
             created_at=row["created_at"],
+            allergen_profile=json.loads(allergen_json) if allergen_json else [],
         )
 
 

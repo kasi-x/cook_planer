@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { MealItem, MealIngredient, FoodItem, Recipe, MealSlotType } from '../types';
-import { MEAL_SLOT_LABELS, emptyMealItem } from '../types';
+import type { MealItem, MealIngredient, FoodItem, Recipe, MealSlotType, CookingMethod } from '../types';
+import { MEAL_SLOT_LABELS, COOKING_METHOD_LABELS, emptyMealItem } from '../types';
 import DishSelector from './DishSelector';
 
 interface Props {
@@ -90,6 +90,15 @@ export default function MealSlot({ slotType, item, foods, recipes, onChange }: P
             onChange={e => updateIngredient(idx, 'amount_g', Number(e.target.value))}
             placeholder="g"
           />
+          <select
+            className="cooking-method-select"
+            value={ing.cooking_method || '生'}
+            onChange={e => updateIngredient(idx, 'cooking_method', e.target.value as CookingMethod)}
+          >
+            {Object.entries(COOKING_METHOD_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
           <button className="remove-btn" onClick={() => removeIngredient(idx)}>&times;</button>
         </div>
       ))}
