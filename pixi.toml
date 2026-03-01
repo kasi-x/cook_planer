@@ -28,6 +28,9 @@ all = { depends-on = ["scrape-all", "merge", "report"] }
 # APIサーバー
 api = "uvicorn src.api.main:app --reload --port 8000"
 
+# 献立作成支援アプリ
+meal-planner-dev = { cmd = "cd meal-planner && npm run dev" }
+
 [dependencies]
 python = ">=3.11"
 requests = "*"

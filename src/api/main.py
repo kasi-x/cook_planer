@@ -7,6 +7,22 @@ from pydantic import BaseModel, Field
 
 from .models import FoodItem, OptimizeRequest, OptimizeResult
 from .services import food_service
+from .menu_models import (
+    MenuPlanCreate,
+    MenuPlanUpdate,
+    MenuPlanResponse,
+    DailyMenuResponse,
+    DailyMenuUpdate,
+    DailyNutritionResult,
+    NutritionDailyRequest,
+    NutritionWeeklyRequest,
+    WeeklyNutritionResult,
+    MenuCopyRequest,
+    SchoolGradeLevel,
+    GRADE_AGE_MAP,
+    GRADE_LABELS,
+)
+from .menu_service import menu_service as menu_svc
 from src.scrapers.recipe_scraper import (
     get_all_recipes,
     process_recipe,
@@ -37,7 +53,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Accept"],
 )
 
@@ -618,3 +634,109 @@ def calculate_dish(request: DishCalculateRequest) -> DishCalculateResult:
         per_serving_cost=round(total_cost / request.servings, 0),
         nutrients=nutrients,
     )
+
+
+# --- 献立作成支援 エンドポイント ---
+
+@app.post("/api/menus", response_model=MenuPlanResponse)
+def create_menu_plan(req: MenuPlanCreate) -> MenuPlanResponse:
+    """献立計画を作成"""
+    return menu_svc.create_plan(req)
+
+
+@app.get("/api/menus", response_model=list[MenuPlanResponse])
+def get_menu_plans() -> list[MenuPlanResponse]:
+    """献立計画一覧を取得"""
+    return menu_svc.get_plans()
+
+
+# 具体パスをパスパラメータより先に定義
+@app.get("/api/menus/daily", response_model=DailyMenuResponse)
+def get_daily_menu(plan_id: int, date: str) -> DailyMenuResponse:
+    """日別献立を取得"""
+    return menu_svc.get_daily_menu(plan_id, date)
+
+
+@app.put("/api/menus/daily", response_model=DailyMenuResponse)
+def update_daily_menu(req: DailyMenuUpdate) -> DailyMenuResponse:
+    """日別献立を更新"""
+    return menu_svc.update_daily_menu(req)
+
+
+@app.get("/api/menus/range", response_model=list[DailyMenuResponse])
+def get_menus_range(plan_id: int, start: str, end: str) -> list[DailyMenuResponse]:
+    """期間の献立を取得"""
+    return menu_svc.get_menus_range(plan_id, start, end)
+
+
+@app.post("/api/menus/copy", response_model=MenuPlanResponse)
+def copy_menu_plan(req: MenuCopyRequest) -> MenuPlanResponse:
+    """献立計画をコピー"""
+    return menu_svc.copy_plan(req)
+
+
+@app.get("/api/menus/{plan_id}", response_model=MenuPlanResponse)
+def get_menu_plan(plan_id: int) -> MenuPlanResponse:
+    """献立計画を取得"""
+    plan = menu_svc.get_plan(plan_id)
+    if not plan:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return plan
+
+
+@app.put("/api/menus/{plan_id}", response_model=MenuPlanResponse)
+def update_menu_plan(plan_id: int, req: MenuPlanUpdate) -> MenuPlanResponse:
+    """献立計画を更新"""
+    plan = menu_svc.update_plan(plan_id, req)
+    if not plan:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return plan
+
+
+@app.delete("/api/menus/{plan_id}")
+def delete_menu_plan(plan_id: int):
+    """献立計画を削除"""
+    if not menu_svc.delete_plan(plan_id):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return {"ok": True}
+
+
+@app.post("/api/menu/nutrition/daily", response_model=DailyNutritionResult)
+def analyze_daily_nutrition(req: NutritionDailyRequest) -> DailyNutritionResult:
+    """日別栄養分析"""
+    return menu_svc.analyze_daily_nutrition(req.menu, req.grade_level)
+
+
+@app.post("/api/menu/nutrition/weekly", response_model=WeeklyNutritionResult)
+def analyze_weekly_nutrition(req: NutritionWeeklyRequest) -> WeeklyNutritionResult:
+    """週間栄養分析"""
+    return menu_svc.analyze_weekly_nutrition(req.plan_id, req.start_date)
+
+
+@app.get("/api/menu/nutrition/standards/{grade_level}")
+def get_nutrition_standards(grade_level: SchoolGradeLevel):
+    """学年別給食基準を取得"""
+    from src.optimize import get_school_lunch_requirements, NUTRIENT_NAMES, NUTRIENT_UNITS
+
+    age = GRADE_AGE_MAP[grade_level]
+    standards = get_school_lunch_requirements(age)
+
+    result = []
+    for key, value in standards.items():
+        if key in NUTRIENT_NAMES:
+            result.append({
+                "key": key,
+                "name": NUTRIENT_NAMES[key],
+                "unit": NUTRIENT_UNITS.get(key, ""),
+                "value": value,
+            })
+
+    return {
+        "grade_level": grade_level.value,
+        "label": GRADE_LABELS[grade_level],
+        "age": age,
+        "nutrients": result,
+    }

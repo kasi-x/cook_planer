@@ -23,3 +23,5 @@ data/raw/
 
 # Logs
 *.log
+meal-planner/dist/
+meal-planner/node_modules/
